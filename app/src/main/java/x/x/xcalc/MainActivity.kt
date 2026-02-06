@@ -75,6 +75,9 @@ fun CalculatorScreen() {
     var pendingOp by remember { mutableStateOf<String?>(null) }
     var resetInput by remember { mutableStateOf(false) }
     val showEqualsConfirm = remember { mutableStateOf(false) }
+    var backspaceTapCount by remember { mutableStateOf(0) }
+    var lastOp by remember { mutableStateOf<String?>(null) }
+    var lastRight by remember { mutableStateOf<Double?>(null) }
 
     val rows = listOf(
         listOf(
@@ -119,12 +122,18 @@ fun CalculatorScreen() {
         storedValue = null
         pendingOp = null
         resetInput = false
+        lastOp = null
+        lastRight = null
     }
 
     fun applyEquals() {
-        val op = pendingOp ?: return
-        val left = storedValue ?: return
-        val right = currentInput.toDoubleOrNull() ?: return
+        val op = pendingOp ?: lastOp ?: return
+        val left = storedValue ?: currentInput.toDoubleOrNull() ?: return
+        val right = if (pendingOp != null) {
+            currentInput.toDoubleOrNull() ?: return
+        } else {
+            lastRight ?: return
+        }
         val result = when (op) {
             "+" -> left + right
             "−" -> left - right
@@ -137,6 +146,8 @@ fun CalculatorScreen() {
         } else {
             currentInput = formatNumber(result)
         }
+        lastOp = op
+        lastRight = right
         storedValue = null
         pendingOp = null
         resetInput = true
@@ -150,10 +161,14 @@ fun CalculatorScreen() {
             confirmButton = {
                 Button(onClick = {
                     showEqualsConfirm.value = false
+                    backspaceTapCount = 0
                 }) { Text("Ok") }
             },
             dismissButton = {
-                Button(onClick = { showEqualsConfirm.value = false }) { Text("Cancel") }
+                Button(onClick = {
+                    showEqualsConfirm.value = false
+                    backspaceTapCount = 0
+                }) { Text("Cancel") }
             }
         )
     }
@@ -197,6 +212,7 @@ fun CalculatorScreen() {
                                     resetInput = false
                                 }
                                 button.icon != null -> {
+                                    backspaceTapCount = (backspaceTapCount + 1).coerceAtMost(2)
                                     if (resetInput) {
                                         currentInput = "0"
                                         resetInput = false
@@ -208,18 +224,25 @@ fun CalculatorScreen() {
                                     }
                                 }
                                 label in listOf("+", "−", "×", "÷") -> {
+                                    backspaceTapCount = 0
                                     val current = currentInput.toDoubleOrNull() ?: 0.0
                                     if (pendingOp != null && !resetInput) {
                                         applyEquals()
                                         storedValue = currentInput.toDoubleOrNull()
+                                        lastOp = null
+                                        lastRight = null
                                     } else if (storedValue == null) {
                                         storedValue = current
                                     }
                                     pendingOp = label
                                     resetInput = true
                                 }
-                                label == "=" -> applyEquals()
+                                label == "=" -> {
+                                    backspaceTapCount = 0
+                                    applyEquals()
+                                }
                                 label == "%" -> {
+                                    backspaceTapCount = 0
                                     val current = currentInput.toDoubleOrNull() ?: 0.0
                                     val base = storedValue
                                     val percentValue = if (base != null) base * current / 100.0 else current / 100.0
@@ -227,6 +250,7 @@ fun CalculatorScreen() {
                                     resetInput = false
                                 }
                                 label == "." -> {
+                                    backspaceTapCount = 0
                                     if (resetInput) {
                                         currentInput = "0."
                                         resetInput = false
@@ -235,6 +259,7 @@ fun CalculatorScreen() {
                                     }
                                 }
                                 label.all { it.isDigit() } -> {
+                                    backspaceTapCount = 0
                                     if (resetInput || currentInput == "0") {
                                         currentInput = label
                                     } else {
@@ -251,7 +276,12 @@ fun CalculatorScreen() {
                             button = button,
                             onClick = onPress,
                             onLongPress = if (button.label == "=") {
-                                { showEqualsConfirm.value = true }
+                                {
+                                    if (backspaceTapCount >= 2) {
+                                        showEqualsConfirm.value = true
+                                        backspaceTapCount = 0
+                                    }
+                                }
                             } else null
                         )
                     }
