@@ -33,7 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import x.x.xcalc.ui.theme.XcalcTheme
 
 class MainActivity : ComponentActivity() {
@@ -62,7 +62,7 @@ fun CalculatorScreen() {
     val rows = listOf(
         listOf(
             CalcButton("AC", isEmphasis = true),
-            CalcButton("DEL", isEmphasis = true),
+            CalcButton("C", isEmphasis = true),
             CalcButton("%", isOperator = true),
             CalcButton("÷", isOperator = true)
         ),
@@ -87,7 +87,7 @@ fun CalculatorScreen() {
         listOf(
             CalcButton("0"),
             CalcButton("."),
-            CalcButton("backspace", icon = Icons.Filled.Backspace, isEmphasis = true),
+            CalcButton("backspace", icon = Icons.AutoMirrored.Filled.Backspace, isEmphasis = true),
             CalcButton("=", isOperator = true, isEmphasis = true)
         )
     )
