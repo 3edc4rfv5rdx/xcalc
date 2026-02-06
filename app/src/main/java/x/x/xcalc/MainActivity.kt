@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +21,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,8 +39,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
+import kotlinx.coroutines.withTimeoutOrNull
 import x.x.xcalc.ui.theme.XcalcTheme
 
 class MainActivity : ComponentActivity() {
@@ -59,6 +70,12 @@ private data class CalcButton(
 
 @Composable
 fun CalculatorScreen() {
+    var currentInput by remember { mutableStateOf("0") }
+    var storedValue by remember { mutableStateOf<Double?>(null) }
+    var pendingOp by remember { mutableStateOf<String?>(null) }
+    var resetInput by remember { mutableStateOf(false) }
+    var showEqualsConfirm by remember { mutableStateOf(false) }
+
     val rows = listOf(
         listOf(
             CalcButton("AC", isEmphasis = true),
@@ -92,6 +109,55 @@ fun CalculatorScreen() {
         )
     )
 
+    fun formatNumber(value: Double): String {
+        val asLong = value.toLong()
+        return if (value == asLong.toDouble()) asLong.toString() else value.toString()
+    }
+
+    fun resetAll() {
+        currentInput = "0"
+        storedValue = null
+        pendingOp = null
+        resetInput = false
+    }
+
+    fun applyEquals() {
+        val op = pendingOp ?: return
+        val left = storedValue ?: return
+        val right = currentInput.toDoubleOrNull() ?: return
+        val result = when (op) {
+            "+" -> left + right
+            "−" -> left - right
+            "×" -> left * right
+            "÷" -> if (right == 0.0) Double.NaN else left / right
+            else -> right
+        }
+        if (result.isNaN() || result.isInfinite()) {
+            currentInput = "Error"
+        } else {
+            currentInput = formatNumber(result)
+        }
+        storedValue = null
+        pendingOp = null
+        resetInput = true
+    }
+
+    if (showEqualsConfirm) {
+        AlertDialog(
+            onDismissRequest = { showEqualsConfirm = false },
+            title = { Text("Confirm") },
+            text = { Text("Apply '=' ?") },
+            confirmButton = {
+                Button(onClick = {
+                    showEqualsConfirm = false
+                }) { Text("Ok") }
+            },
+            dismissButton = {
+                Button(onClick = { showEqualsConfirm = false }) { Text("Cancel") }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -99,6 +165,7 @@ fun CalculatorScreen() {
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         DisplayArea(
+            value = currentInput,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
@@ -118,12 +185,74 @@ fun CalculatorScreen() {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     row.forEach { button ->
+                        val onPress: () -> Unit = {
+                            val label = button.label
+                            if (currentInput == "Error" && label !in listOf("AC", "C")) {
+                                resetAll()
+                            }
+                            when {
+                                label == "AC" -> resetAll()
+                                label == "C" -> {
+                                    currentInput = "0"
+                                    resetInput = false
+                                }
+                                button.icon != null -> {
+                                    if (resetInput) {
+                                        currentInput = "0"
+                                        resetInput = false
+                                    } else {
+                                        currentInput = currentInput.dropLast(1)
+                                        if (currentInput.isEmpty() || currentInput == "-") {
+                                            currentInput = "0"
+                                        }
+                                    }
+                                }
+                                label in listOf("+", "−", "×", "÷") -> {
+                                    val current = currentInput.toDoubleOrNull() ?: 0.0
+                                    if (pendingOp != null && !resetInput) {
+                                        applyEquals()
+                                        storedValue = currentInput.toDoubleOrNull()
+                                    } else if (storedValue == null) {
+                                        storedValue = current
+                                    }
+                                    pendingOp = label
+                                    resetInput = true
+                                }
+                                label == "=" -> applyEquals()
+                                label == "%" -> {
+                                    val current = currentInput.toDoubleOrNull() ?: 0.0
+                                    val base = storedValue
+                                    val percentValue = if (base != null) base * current / 100.0 else current / 100.0
+                                    currentInput = formatNumber(percentValue)
+                                    resetInput = false
+                                }
+                                label == "." -> {
+                                    if (resetInput) {
+                                        currentInput = "0."
+                                        resetInput = false
+                                    } else if (!currentInput.contains(".")) {
+                                        currentInput += "."
+                                    }
+                                }
+                                label.all { it.isDigit() } -> {
+                                    if (resetInput || currentInput == "0") {
+                                        currentInput = label
+                                    } else {
+                                        currentInput += label
+                                    }
+                                    resetInput = false
+                                }
+                            }
+                        }
                         CalcButtonView(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(64.dp),
                             button = button,
-                            onClick = { /* TODO: connect logic */ }
+                            onClick = onPress,
+                            onLongPress = if (button.label == "=") {
+                                { showEqualsConfirm = true }
+                            } else null
                         )
                     }
 
@@ -137,7 +266,7 @@ fun CalculatorScreen() {
 }
 
 @Composable
-private fun DisplayArea(modifier: Modifier = Modifier) {
+private fun DisplayArea(value: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .background(
@@ -149,7 +278,7 @@ private fun DisplayArea(modifier: Modifier = Modifier) {
     ) {
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "0",
+                text = value,
                 style = MaterialTheme.typography.displayLarge,
                 textAlign = TextAlign.End,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -162,7 +291,8 @@ private fun DisplayArea(modifier: Modifier = Modifier) {
 private fun CalcButtonView(
     modifier: Modifier,
     button: CalcButton,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongPress: (() -> Unit)? = null
 ) {
     val colors = when {
         button.isEmphasis -> ButtonDefaults.buttonColors(
@@ -181,26 +311,57 @@ private fun CalcButtonView(
         )
     }
 
-    Button(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = colors,
-        contentPadding = PaddingValues(0.dp)
-    ) {
-        if (button.icon != null) {
-            Icon(
-                imageVector = button.icon,
-                contentDescription = button.label
-            )
-        } else {
-            Text(
-                text = button.label,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 33.sp
+    val longPressModifier = if (onLongPress != null) {
+        Modifier.pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    awaitFirstDown(requireUnconsumed = false)
+                    val released = withTimeoutOrNull(5000) {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Final)
+                            if (event.changes.any { it.changedToUpIgnoreConsumed() }) {
+                                return@withTimeoutOrNull true
+                            }
+                        }
+                    }
+                    if (released == null) {
+                        onLongPress()
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Final)
+                            if (event.changes.any { it.changedToUpIgnoreConsumed() }) {
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        Modifier
+    }
+
+    Box(modifier = modifier.then(longPressModifier)) {
+        Button(
+            onClick = onClick,
+            modifier = Modifier.fillMaxSize(),
+            shape = RoundedCornerShape(12.dp),
+            colors = colors,
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            if (button.icon != null) {
+                Icon(
+                    imageVector = button.icon,
+                    contentDescription = button.label
                 )
-            )
+            } else {
+                Text(
+                    text = button.label,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 33.sp
+                    )
+                )
+            }
         }
     }
 }
