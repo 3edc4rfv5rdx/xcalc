@@ -5,11 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -38,9 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
-import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import x.x.xcalc.ui.theme.XcalcTheme
@@ -292,59 +289,41 @@ private fun CalcButtonView(
     onClick: () -> Unit,
     onLongPress: (() -> Unit)? = null
 ) {
-    val colors = when {
-        button.isEmphasis -> ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
+    val containerColor: Color
+    val contentColor: Color
+    when {
+        button.isEmphasis -> {
+            containerColor = MaterialTheme.colorScheme.primary
             contentColor = MaterialTheme.colorScheme.onPrimary
-        )
-
-        button.isOperator -> ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFE9967A), // color operators
-            contentColor = Color(0xFF000000)
-        )
-
-        else -> ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFFFD54F), // color digits
-            contentColor = Color(0xFF3D2F00)
-        )
-    }
-
-    val longPressModifier = if (onLongPress != null) {
-        Modifier.pointerInput(Unit) {
-            awaitPointerEventScope {
-                while (true) {
-                    awaitFirstDown(requireUnconsumed = false)
-                    val released = kotlinx.coroutines.withTimeoutOrNull(5000) {
-                        while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Final)
-                            if (event.changes.any { it.changedToUpIgnoreConsumed() }) {
-                                return@withTimeoutOrNull true
-                            }
-                        }
-                    }
-                    if (released == null) {
-                        onLongPress()
-                        while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Final)
-                            if (event.changes.any { it.changedToUpIgnoreConsumed() }) {
-                                break
-                            }
-                        }
-                    }
-                }
-            }
         }
-    } else {
-        Modifier
+        button.isOperator -> {
+            containerColor = Color(0xFFE9967A) // color operators
+            contentColor = Color(0xFF000000)
+        }
+        else -> {
+            containerColor = Color(0xFFFFD54F) // color digits
+            contentColor = Color(0xFF3D2F00)
+        }
     }
 
-    Box(modifier = modifier.then(longPressModifier)) {
-        Button(
+    val interactionSource = remember { MutableInteractionSource() }
+    Surface(
+        modifier = modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            role = Role.Button,
             onClick = onClick,
-            modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(12.dp),
-            colors = colors,
-            contentPadding = PaddingValues(0.dp)
+            onLongClick = onLongPress
+        ),
+        color = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
         ) {
             if (button.icon != null) {
                 Icon(
