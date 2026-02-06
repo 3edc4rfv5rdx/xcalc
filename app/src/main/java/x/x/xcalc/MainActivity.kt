@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,7 +73,7 @@ fun CalculatorScreen() {
     var storedValue by remember { mutableStateOf<Double?>(null) }
     var pendingOp by remember { mutableStateOf<String?>(null) }
     var resetInput by remember { mutableStateOf(false) }
-    var showEqualsConfirm by remember { mutableStateOf(false) }
+    val showEqualsConfirm = remember { mutableStateOf(false) }
 
     val rows = listOf(
         listOf(
@@ -142,18 +141,18 @@ fun CalculatorScreen() {
         resetInput = true
     }
 
-    if (showEqualsConfirm) {
+    if (showEqualsConfirm.value) {
         AlertDialog(
-            onDismissRequest = { showEqualsConfirm = false },
+            onDismissRequest = { showEqualsConfirm.value = false },
             title = { Text("Confirm") },
             text = { Text("Apply '=' ?") },
             confirmButton = {
                 Button(onClick = {
-                    showEqualsConfirm = false
+                    showEqualsConfirm.value = false
                 }) { Text("Ok") }
             },
             dismissButton = {
-                Button(onClick = { showEqualsConfirm = false }) { Text("Cancel") }
+                Button(onClick = { showEqualsConfirm.value = false }) { Text("Cancel") }
             }
         )
     }
@@ -251,7 +250,7 @@ fun CalculatorScreen() {
                             button = button,
                             onClick = onPress,
                             onLongPress = if (button.label == "=") {
-                                { showEqualsConfirm = true }
+                                { showEqualsConfirm.value = true }
                             } else null
                         )
                     }
