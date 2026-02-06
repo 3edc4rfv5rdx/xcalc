@@ -18,16 +18,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Backspace
 import x.x.xcalc.ui.theme.XcalcTheme
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +52,7 @@ class MainActivity : ComponentActivity() {
 
 private data class CalcButton(
     val label: String,
+    val icon: ImageVector? = null,
     val isOperator: Boolean = false,
     val isEmphasis: Boolean = false
 )
@@ -80,6 +87,7 @@ fun CalculatorScreen() {
         listOf(
             CalcButton("0"),
             CalcButton("."),
+            CalcButton("backspace", icon = Icons.Filled.Backspace, isEmphasis = true),
             CalcButton("=", isOperator = true, isEmphasis = true)
         )
     )
@@ -163,13 +171,13 @@ private fun CalcButtonView(
         )
 
         button.isOperator -> ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+            containerColor = Color(0xFFE9967A), // color operators
+            contentColor = Color(0xFF000000)
         )
 
         else -> ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            containerColor = Color(0xFFFFD54F), // color digits
+            contentColor = Color(0xFF3D2F00)
         )
     }
 
@@ -180,12 +188,20 @@ private fun CalcButtonView(
         colors = colors,
         contentPadding = PaddingValues(0.dp)
     ) {
-        Text(
-            text = button.label,
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = if (button.isEmphasis) FontWeight.SemiBold else FontWeight.Normal
+        if (button.icon != null) {
+            Icon(
+                imageVector = button.icon,
+                contentDescription = button.label
             )
-        )
+        } else {
+            Text(
+                text = button.label,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 33.sp
+                )
+            )
+        }
     }
 }
 
