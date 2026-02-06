@@ -5,7 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,10 +39,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import x.x.xcalc.ui.theme.XcalcTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -307,14 +312,32 @@ private fun CalcButtonView(
     }
 
     val interactionSource = remember { MutableInteractionSource() }
-    Surface(
-        modifier = modifier.combinedClickable(
+    val scope = rememberCoroutineScope()
+    val pressModifier = if (onLongPress != null) {
+        Modifier.pointerInput(onLongPress, onClick) {
+            detectTapGestures(
+                onTap = { onClick() },
+                onPress = {
+                    val job = scope.launch {
+                        delay(5000)
+                        onLongPress()
+                    }
+                    tryAwaitRelease()
+                    job.cancel()
+                }
+            )
+        }
+    } else {
+        Modifier.clickable(
             interactionSource = interactionSource,
             indication = null,
             role = Role.Button,
-            onClick = onClick,
-            onLongClick = onLongPress
-        ),
+            onClick = onClick
+        )
+    }
+
+    Surface(
+        modifier = modifier.then(pressModifier),
         color = containerColor,
         contentColor = contentColor,
         shape = RoundedCornerShape(12.dp)
