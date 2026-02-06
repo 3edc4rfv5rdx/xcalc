@@ -43,7 +43,6 @@ import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
-import kotlinx.coroutines.withTimeoutOrNull
 import x.x.xcalc.ui.theme.XcalcTheme
 
 class MainActivity : ComponentActivity() {
@@ -315,7 +314,7 @@ private fun CalcButtonView(
             awaitPointerEventScope {
                 while (true) {
                     awaitFirstDown(requireUnconsumed = false)
-                    val released = withTimeoutOrNull(5000) {
+                    val released = kotlinx.coroutines.withTimeoutOrNull(5000) {
                         while (true) {
                             val event = awaitPointerEvent(PointerEventPass.Final)
                             if (event.changes.any { it.changedToUpIgnoreConsumed() }) {
