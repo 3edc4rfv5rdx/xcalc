@@ -1,7 +1,6 @@
 package x.x.xcalc.vault
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Environment
 import android.webkit.MimeTypeMap
 import android.widget.Toast
@@ -107,8 +106,6 @@ fun FileListScreen(
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
-    var showDeleteOriginalsDialog by remember { mutableStateOf<List<Uri>?>(null) }
-    var showDeleteOriginalTreeDialog by remember { mutableStateOf<Uri?>(null) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showExportAllDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
@@ -158,9 +155,13 @@ fun FileListScreen(
                     uris.mapNotNull { repository.importFile(it, currentFolder) }
                 }
                 refreshItems()
-                if (imported.isNotEmpty()) {
-                    showDeleteOriginalsDialog = uris
+                val failedCount = uris.size - imported.size
+                val message = if (failedCount == 0) {
+                    "Imported ${imported.size} file(s)"
+                } else {
+                    "Imported ${imported.size}, failed $failedCount"
                 }
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -170,11 +171,11 @@ fun FileListScreen(
     ) { uri ->
         if (uri != null) {
             scope.launch {
-                withContext(Dispatchers.IO) {
+                val imported = withContext(Dispatchers.IO) {
                     repository.importFolder(uri, currentFolder)
                 }
                 refreshItems()
-                showDeleteOriginalTreeDialog = uri
+                Toast.makeText(context, "Imported ${imported.size} file(s)", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -582,50 +583,6 @@ fun FileListScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showMoveDialog = false }) { Text("Cancel") }
-            }
-        )
-    }
-
-    // Delete originals dialog (after file import)
-    showDeleteOriginalsDialog?.let { uris ->
-        AlertDialog(
-            onDismissRequest = { showDeleteOriginalsDialog = null },
-            title = { Text("Delete originals?") },
-            text = { Text("Delete ${uris.size} original file(s)?") },
-            confirmButton = {
-                Button(onClick = {
-                    scope.launch {
-                        withContext(Dispatchers.IO) {
-                            uris.forEach { repository.deleteOriginal(it) }
-                        }
-                    }
-                    showDeleteOriginalsDialog = null
-                }) { Text("Delete") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteOriginalsDialog = null }) { Text("Keep") }
-            }
-        )
-    }
-
-    // Delete original tree dialog (after folder import)
-    showDeleteOriginalTreeDialog?.let { uri ->
-        AlertDialog(
-            onDismissRequest = { showDeleteOriginalTreeDialog = null },
-            title = { Text("Delete original folder?") },
-            text = { Text("Delete the original folder?") },
-            confirmButton = {
-                Button(onClick = {
-                    scope.launch {
-                        withContext(Dispatchers.IO) {
-                            repository.deleteOriginalTree(uri)
-                        }
-                    }
-                    showDeleteOriginalTreeDialog = null
-                }) { Text("Delete") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteOriginalTreeDialog = null }) { Text("Keep") }
             }
         )
     }
