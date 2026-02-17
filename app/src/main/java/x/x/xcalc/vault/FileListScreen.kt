@@ -570,15 +570,18 @@ fun FileListScreen(
             confirmButton = {
                 Button(onClick = {
                     repository.moveFiles(selectedFiles(), selectedFolder)
-                    // Move folders - update their files' paths
+                    var failedMoves = 0
                     for (folder in selectedFolders()) {
-                        val folderName = folder.name
-                        val newPath = if (selectedFolder.isEmpty()) folderName else "$selectedFolder/$folderName"
-                        repository.renameFolder(folder.path, folderName) // just refresh paths
+                        if (!repository.moveFolder(folder.path, selectedFolder)) {
+                            failedMoves++
+                        }
                     }
                     selected.clear()
                     refreshItems()
                     showMoveDialog = false
+                    if (failedMoves > 0) {
+                        Toast.makeText(context, "Some folders could not be moved", Toast.LENGTH_SHORT).show()
+                    }
                 }) { Text("Move") }
             },
             dismissButton = {

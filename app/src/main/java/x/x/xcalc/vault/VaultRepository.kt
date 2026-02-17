@@ -257,6 +257,28 @@ class VaultRepository(private val context: Context) {
         saveMetadata()
     }
 
+    fun moveFolder(oldPath: String, targetParentPath: String): Boolean {
+        if (oldPath.isEmpty()) return false
+        if (targetParentPath == oldPath || targetParentPath.startsWith("$oldPath/")) return false
+
+        val folderName = oldPath.substringAfterLast("/")
+        val newPath = if (targetParentPath.isEmpty()) folderName else "$targetParentPath/$folderName"
+        if (newPath == oldPath) return false
+
+        val list = loadMetadata() as MutableList
+        for (i in list.indices) {
+            val meta = list[i]
+            when {
+                meta.relativePath == oldPath -> list[i] = meta.copy(relativePath = newPath)
+                meta.relativePath.startsWith("$oldPath/") ->
+                    list[i] = meta.copy(relativePath = meta.relativePath.replaceFirst(oldPath, newPath))
+            }
+        }
+        metadataCache = list
+        saveMetadata()
+        return true
+    }
+
     fun renameFile(metadata: VaultFileMetadata, newName: String) {
         val list = loadMetadata() as MutableList
         val idx = list.indexOfFirst { it.id == metadata.id }
