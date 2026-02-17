@@ -160,13 +160,22 @@ class VaultRepository(private val context: Context) {
     fun decryptToTemp(metadata: VaultFileMetadata): File? {
         val encFile = File(filesDir, "${metadata.id}.enc")
         if (!encFile.exists()) return null
-        val tempFile = File(tempDir, metadata.name)
-        encFile.inputStream().use { input ->
-            tempFile.outputStream().use { output ->
-                CryptoManager.decrypt(input, output)
+
+        val ext = metadata.name.substringAfterLast('.', "").trim()
+        val suffix = if (ext.isNotEmpty()) ".${ext.take(16)}" else ".bin"
+        val tempFile = File.createTempFile("view_", suffix, tempDir)
+
+        return try {
+            encFile.inputStream().use { input ->
+                tempFile.outputStream().use { output ->
+                    CryptoManager.decrypt(input, output)
+                }
             }
+            tempFile
+        } catch (_: Exception) {
+            tempFile.delete()
+            null
         }
-        return tempFile
     }
 
     fun reEncryptFromTemp(metadata: VaultFileMetadata, tempFile: File) {

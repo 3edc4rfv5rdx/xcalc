@@ -84,6 +84,12 @@ sealed class FileListItem {
     data class FileItem(val metadata: VaultFileMetadata) : FileListItem()
 }
 
+private data class ViewedTemp(
+    val metadata: VaultFileMetadata,
+    val tempFile: File,
+    val initialHash: Long
+)
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun FileListScreen(
@@ -109,9 +115,7 @@ fun FileListScreen(
     var renameTarget by remember { mutableStateOf<Any?>(null) } // VaultFileMetadata or String (folder path)
 
     // Temp file tracking for view action
-    var viewingMeta by remember { mutableStateOf<VaultFileMetadata?>(null) }
-    var viewingTempFile by remember { mutableStateOf<File?>(null) }
-    var viewingHash by remember { mutableStateOf<Long>(0) }
+    val viewedTemps = remember { mutableStateListOf<ViewedTemp>() }
 
     fun refreshItems() {
         val files = repository.getFilesInFolder(currentFolder)
@@ -130,20 +134,18 @@ fun FileListScreen(
         onDispose { }
     }
 
-    // Check if viewed file was modified when returning
-    DisposableEffect(viewingMeta, viewingTempFile) {
+    // Persist edits and clean temp files once we leave this screen.
+    DisposableEffect(Unit) {
         onDispose {
-            val meta = viewingMeta
-            val temp = viewingTempFile
-            if (meta != null && temp != null && temp.exists()) {
-                val newHash = temp.lastModified() + temp.length()
-                if (newHash != viewingHash) {
-                    repository.reEncryptFromTemp(meta, temp)
+            viewedTemps.forEach { viewed ->
+                if (!viewed.tempFile.exists()) return@forEach
+                val newHash = viewed.tempFile.lastModified() + viewed.tempFile.length()
+                if (newHash != viewed.initialHash) {
+                    repository.reEncryptFromTemp(viewed.metadata, viewed.tempFile)
                 }
-                temp.delete()
+                viewed.tempFile.delete()
             }
-            viewingMeta = null
-            viewingTempFile = null
+            viewedTemps.clear()
         }
     }
 
@@ -223,9 +225,13 @@ fun FileListScreen(
                                         repository.decryptToTemp(meta)
                                     }
                                     if (tempFile != null) {
-                                        viewingMeta = meta
-                                        viewingTempFile = tempFile
-                                        viewingHash = tempFile.lastModified() + tempFile.length()
+                                        viewedTemps.add(
+                                            ViewedTemp(
+                                                metadata = meta,
+                                                tempFile = tempFile,
+                                                initialHash = tempFile.lastModified() + tempFile.length()
+                                            )
+                                        )
                                         val uri = FileProvider.getUriForFile(
                                             context,
                                             "${context.packageName}.fileprovider",
@@ -251,6 +257,8 @@ fun FileListScreen(
                                             Toast.makeText(context, "No app to open this file", Toast.LENGTH_SHORT).show()
                                         }
                                         selected.clear()
+                                    } else {
+                                        Toast.makeText(context, "Failed to open file", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             }) {
