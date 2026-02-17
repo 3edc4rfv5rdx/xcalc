@@ -2,6 +2,7 @@ package x.x.xcalc.vault
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import java.io.EOFException
 import java.io.InputStream
 import java.io.OutputStream
 import java.security.KeyStore
@@ -59,6 +60,7 @@ object CryptoManager {
     }
 
     fun decryptBytes(data: ByteArray): ByteArray {
+        require(data.size > IV_SIZE) { "Ciphertext is too short" }
         val iv = data.copyOfRange(0, IV_SIZE)
         val ciphertext = data.copyOfRange(IV_SIZE, data.size)
         val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -71,7 +73,7 @@ object CryptoManager {
         var off = 0
         while (off < size) {
             val n = input.read(buf, off, size - off)
-            if (n < 0) break
+            if (n < 0) throw EOFException("Unexpected EOF while reading $size bytes")
             off += n
         }
         return buf

@@ -24,11 +24,15 @@ class VaultRepository(private val context: Context) {
             metadataCache = mutableListOf()
             return metadataCache!!
         }
-        val encrypted = metadataFile.readBytes()
-        val json = String(CryptoManager.decryptBytes(encrypted))
-        val type = object : TypeToken<List<VaultFileMetadata>>() {}.type
-        val list: List<VaultFileMetadata> = gson.fromJson(json, type)
-        metadataCache = list.toMutableList()
+        metadataCache = try {
+            val encrypted = metadataFile.readBytes()
+            val json = String(CryptoManager.decryptBytes(encrypted))
+            val type = object : TypeToken<List<VaultFileMetadata>>() {}.type
+            val list: List<VaultFileMetadata>? = gson.fromJson(json, type)
+            (list ?: emptyList()).toMutableList()
+        } catch (_: Exception) {
+            mutableListOf()
+        }
         return metadataCache!!
     }
 
@@ -112,11 +116,16 @@ class VaultRepository(private val context: Context) {
         )
 
         val encFile = File(filesDir, "${metadata.id}.enc")
-        resolver.openInputStream(uri)?.use { input ->
-            encFile.outputStream().use { output ->
-                CryptoManager.encrypt(input, output)
-            }
-        } ?: return null
+        try {
+            resolver.openInputStream(uri)?.use { input ->
+                encFile.outputStream().use { output ->
+                    CryptoManager.encrypt(input, output)
+                }
+            } ?: return null
+        } catch (_: Exception) {
+            encFile.delete()
+            return null
+        }
 
         metadata.let {
             val updated = it.copy(size = encFile.length())
