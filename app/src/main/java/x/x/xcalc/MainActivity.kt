@@ -18,13 +18,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,7 +44,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
+import x.x.xcalc.BuildConfig
 import x.x.xcalc.ui.theme.XcalcTheme
+import x.x.xcalc.vault.VaultScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -74,8 +77,9 @@ fun CalculatorScreen() {
     var storedValue by remember { mutableStateOf<Double?>(null) }
     var pendingOp by remember { mutableStateOf<String?>(null) }
     var resetInput by remember { mutableStateOf(false) }
-    val showEqualsConfirm = remember { mutableStateOf(false) }
-    var backspaceTapCount by remember { mutableStateOf(0) }
+    val showVault = remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
+    var backspaceTapCount by remember { mutableIntStateOf(0) }
     var lastOp by remember { mutableStateOf<String?>(null) }
     var lastRight by remember { mutableStateOf<Double?>(null) }
 
@@ -141,10 +145,10 @@ fun CalculatorScreen() {
             "÷" -> if (right == 0.0) Double.NaN else left / right
             else -> right
         }
-        if (result.isNaN() || result.isInfinite()) {
-            currentInput = "Error"
+        currentInput = if (result.isNaN() || result.isInfinite()) {
+            "Error"
         } else {
-            currentInput = formatNumber(result)
+            formatNumber(result)
         }
         lastOp = op
         lastRight = right
@@ -153,34 +157,39 @@ fun CalculatorScreen() {
         resetInput = true
     }
 
-    if (showEqualsConfirm.value) {
+    if (showAbout) {
         AlertDialog(
-            onDismissRequest = { showEqualsConfirm.value = false },
-            title = { Text("Confirm") },
-            text = { Text("Apply '=' ?") },
-            confirmButton = {
-                Button(onClick = {
-                    showEqualsConfirm.value = false
-                    backspaceTapCount = 0
-                }) { Text("Ok") }
+            onDismissRequest = { showAbout = false },
+            title = { Text("xcalc") },
+            text = {
+                Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
             },
-            dismissButton = {
-                Button(onClick = {
-                    showEqualsConfirm.value = false
-                    backspaceTapCount = 0
-                }) { Text("Cancel") }
+            confirmButton = {
+                TextButton(onClick = { showAbout = false }) {
+                    Text("OK")
+                }
             }
         )
+    }
+
+    if (showVault.value) {
+        VaultScreen(onBack = {
+            showVault.value = false
+            @Suppress("ASSIGNED_VALUE_IS_NEVER_READ")
+            backspaceTapCount = 0
+        })
+        return
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.Bottom
     ) {
         DisplayArea(
             value = currentInput,
+            onLongPress = { showAbout = true },
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
@@ -190,8 +199,7 @@ fun CalculatorScreen() {
 
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(2f),
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             rows.forEach { row ->
@@ -278,7 +286,7 @@ fun CalculatorScreen() {
                             onLongPress = if (button.label == "=") {
                                 {
                                     if (backspaceTapCount >= 2) {
-                                        showEqualsConfirm.value = true
+                                        showVault.value = true
                                         backspaceTapCount = 0
                                     }
                                 }
@@ -296,13 +304,20 @@ fun CalculatorScreen() {
 }
 
 @Composable
-private fun DisplayArea(value: String, modifier: Modifier = Modifier) {
+private fun DisplayArea(
+    value: String,
+    onLongPress: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(16.dp)
             )
+            .pointerInput(Unit) {
+                detectTapGestures(onLongPress = { onLongPress() })
+            }
             .padding(20.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
