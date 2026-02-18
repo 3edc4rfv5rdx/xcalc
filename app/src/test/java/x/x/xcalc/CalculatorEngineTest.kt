@@ -103,26 +103,10 @@ class CalculatorEngineTest {
     }
 
     @Test
-    fun historyMaxFourEntries() {
-        repeat(5) {
-            press("1", "+", "1", "=")
-            // Reset for next independent calc
-            press("AC")
-        }
-        // After 5 operations with AC between, history was cleared each time
-        // Let's do it without AC
-        engine.resetAll()
+    fun historyMaxEightEntries() {
         press("1", "+", "1", "=") // 1
-        press("AC")
-        // Need to build up without clearing history
-        engine.resetAll()
-        // Actually, AC clears history. Let's chain equals instead:
-        press("1", "+", "1", "=") // history: ["1 + 1 = 2"]
-        press("=")                 // history: ["1 + 1 = 2", "2 + 1 = 3"]
-        press("=")                 // history: [..., "3 + 1 = 4"]
-        press("=")                 // history: [..., "4 + 1 = 5"]
-        press("=")                 // 5th: should trim to 4
-        assertEquals(4, engine.history.size)
+        repeat(8) { press("=") }  // 8 more = 9 total, trimmed to 8
+        assertEquals(8, engine.history.size)
     }
 
     @Test

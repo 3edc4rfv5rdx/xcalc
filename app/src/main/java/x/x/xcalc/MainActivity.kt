@@ -81,10 +81,8 @@ fun CalculatorScreen() {
     var backspaceTapCount by remember { mutableIntStateOf(0) }
 
     // Read engine state (renderTick forces recomposition)
-    @Suppress("UNUSED_EXPRESSION")
-    renderTick
-    val currentInput = engine.currentInput
-    val history = engine.history
+    val currentInput = if (renderTick >= 0) engine.currentInput else ""
+    val history = engine.history.toList()
 
     val rows = listOf(
         listOf(
