@@ -6,14 +6,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-val buildNumberFile = file("build_number.txt")
+val buildNumberFile = rootProject.file("build_number.txt")
 val buildNumber: Int = if (buildNumberFile.exists()) {
     buildNumberFile.readText().trim().toInt()
 } else {
-    0
+    1
 }
-val newBuildNumber = buildNumber + 1
-buildNumberFile.writeText(newBuildNumber.toString())
 
 val cal: Calendar = Calendar.getInstance()
 val dateVersion = "%d%02d%02d".format(
@@ -28,7 +26,7 @@ if (versionPropertiesFile.exists()) {
 }
 val versionPrefix = (versionProperties.getProperty("versionPrefix") ?: "0.1").trim()
 val releaseVersionName = "$versionPrefix.$dateVersion"
-val releaseVersionCode = newBuildNumber
+val releaseVersionCode = buildNumber
 val keyProperties = Properties()
 val keyPropertiesFile = rootProject.file("key.properties")
 val hasReleaseSigning = keyPropertiesFile.exists().also { exists ->

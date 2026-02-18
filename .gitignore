@@ -16,3 +16,5 @@ local.properties
 key.properties
 *.jks
 *.keystore
+build_number.txt
+NextRun.todo
