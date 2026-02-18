@@ -26,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -82,6 +83,7 @@ fun CalculatorScreen() {
     var backspaceTapCount by remember { mutableIntStateOf(0) }
     var lastOp by remember { mutableStateOf<String?>(null) }
     var lastRight by remember { mutableStateOf<Double?>(null) }
+    val history = remember { mutableStateListOf<String>() }
 
     val rows = listOf(
         listOf(
@@ -128,6 +130,7 @@ fun CalculatorScreen() {
         resetInput = false
         lastOp = null
         lastRight = null
+        history.clear()
     }
 
     fun applyEquals() {
@@ -145,11 +148,16 @@ fun CalculatorScreen() {
             "÷" -> if (right == 0.0) Double.NaN else left / right
             else -> right
         }
-        currentInput = if (result.isNaN() || result.isInfinite()) {
+        val resultText = if (result.isNaN() || result.isInfinite()) {
             "Error"
         } else {
             formatNumber(result)
         }
+        history.add("${formatNumber(left)} $op ${formatNumber(right)} = $resultText")
+        while (history.size > 4) {
+            history.removeAt(0)
+        }
+        currentInput = resultText
         lastOp = op
         lastRight = right
         storedValue = null
@@ -189,6 +197,7 @@ fun CalculatorScreen() {
     ) {
         DisplayArea(
             value = currentInput,
+            history = history,
             onLongPress = { showAbout = true },
             modifier = Modifier
                 .fillMaxWidth()
@@ -199,7 +208,8 @@ fun CalculatorScreen() {
 
         Column(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             rows.forEach { row ->
@@ -306,6 +316,7 @@ fun CalculatorScreen() {
 @Composable
 private fun DisplayArea(
     value: String,
+    history: List<String>,
     onLongPress: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -322,6 +333,18 @@ private fun DisplayArea(
         contentAlignment = Alignment.BottomEnd
     ) {
         Column(horizontalAlignment = Alignment.End) {
+            history.forEach { entry ->
+                Text(
+                    text = entry,
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 28.sp),
+                    textAlign = TextAlign.End,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (history.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             Text(
                 text = value,
                 style = MaterialTheme.typography.displayLarge,
