@@ -26,7 +26,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,16 +73,17 @@ private data class CalcButton(
 
 @Composable
 fun CalculatorScreen() {
-    var currentInput by remember { mutableStateOf("0") }
-    var storedValue by remember { mutableStateOf<Double?>(null) }
-    var pendingOp by remember { mutableStateOf<String?>(null) }
-    var resetInput by remember { mutableStateOf(false) }
+    val engine = remember { CalculatorEngine() }
+    var renderTick by remember { mutableIntStateOf(0) }
     val showVault = remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
     var backspaceTapCount by remember { mutableIntStateOf(0) }
-    var lastOp by remember { mutableStateOf<String?>(null) }
-    var lastRight by remember { mutableStateOf<Double?>(null) }
-    val history = remember { mutableStateListOf<String>() }
+
+    // Read engine state (renderTick forces recomposition)
+    @Suppress("UNUSED_EXPRESSION")
+    renderTick
+    val currentInput = engine.currentInput
+    val history = engine.history
 
     val rows = listOf(
         listOf(
@@ -117,53 +117,6 @@ fun CalculatorScreen() {
             CalcButton("=", isOperator = true, isEmphasis = true)
         )
     )
-
-    fun formatNumber(value: Double): String {
-        val asLong = value.toLong()
-        return if (value == asLong.toDouble()) asLong.toString() else value.toString()
-    }
-
-    fun resetAll() {
-        currentInput = "0"
-        storedValue = null
-        pendingOp = null
-        resetInput = false
-        lastOp = null
-        lastRight = null
-        history.clear()
-    }
-
-    fun applyEquals() {
-        val op = pendingOp ?: lastOp ?: return
-        val left = storedValue ?: currentInput.toDoubleOrNull() ?: return
-        val right = if (pendingOp != null) {
-            currentInput.toDoubleOrNull() ?: return
-        } else {
-            lastRight ?: return
-        }
-        val result = when (op) {
-            "+" -> left + right
-            "−" -> left - right
-            "×" -> left * right
-            "÷" -> if (right == 0.0) Double.NaN else left / right
-            else -> right
-        }
-        val resultText = if (result.isNaN() || result.isInfinite()) {
-            "Error"
-        } else {
-            formatNumber(result)
-        }
-        history.add("${formatNumber(left)} $op ${formatNumber(right)} = $resultText")
-        while (history.size > 4) {
-            history.removeAt(0)
-        }
-        currentInput = resultText
-        lastOp = op
-        lastRight = right
-        storedValue = null
-        pendingOp = null
-        resetInput = true
-    }
 
     if (showAbout) {
         AlertDialog(
@@ -219,73 +172,13 @@ fun CalculatorScreen() {
                 ) {
                     row.forEach { button ->
                         val onPress: () -> Unit = {
-                            val label = button.label
-                            if (currentInput == "Error" && label !in listOf("AC", "C")) {
-                                resetAll()
+                            if (button.icon != null) {
+                                backspaceTapCount = (backspaceTapCount + 1).coerceAtMost(2)
+                            } else if (button.label != "backspace") {
+                                backspaceTapCount = 0
                             }
-                            when {
-                                label == "AC" -> resetAll()
-                                label == "C" -> {
-                                    currentInput = "0"
-                                    resetInput = false
-                                }
-                                button.icon != null -> {
-                                    backspaceTapCount = (backspaceTapCount + 1).coerceAtMost(2)
-                                    if (resetInput) {
-                                        currentInput = "0"
-                                        resetInput = false
-                                    } else {
-                                        currentInput = currentInput.dropLast(1)
-                                        if (currentInput.isEmpty() || currentInput == "-") {
-                                            currentInput = "0"
-                                        }
-                                    }
-                                }
-                                label in listOf("+", "−", "×", "÷") -> {
-                                    backspaceTapCount = 0
-                                    val current = currentInput.toDoubleOrNull() ?: 0.0
-                                    if (pendingOp != null && !resetInput) {
-                                        applyEquals()
-                                        storedValue = currentInput.toDoubleOrNull()
-                                        lastOp = null
-                                        lastRight = null
-                                    } else if (storedValue == null) {
-                                        storedValue = current
-                                    }
-                                    pendingOp = label
-                                    resetInput = true
-                                }
-                                label == "=" -> {
-                                    backspaceTapCount = 0
-                                    applyEquals()
-                                }
-                                label == "%" -> {
-                                    backspaceTapCount = 0
-                                    val current = currentInput.toDoubleOrNull() ?: 0.0
-                                    val base = storedValue
-                                    val percentValue = if (base != null) base * current / 100.0 else current / 100.0
-                                    currentInput = formatNumber(percentValue)
-                                    resetInput = false
-                                }
-                                label == "." -> {
-                                    backspaceTapCount = 0
-                                    if (resetInput) {
-                                        currentInput = "0."
-                                        resetInput = false
-                                    } else if (!currentInput.contains(".")) {
-                                        currentInput += "."
-                                    }
-                                }
-                                label.all { it.isDigit() } -> {
-                                    backspaceTapCount = 0
-                                    if (resetInput || currentInput == "0") {
-                                        currentInput = label
-                                    } else {
-                                        currentInput += label
-                                    }
-                                    resetInput = false
-                                }
-                            }
+                            engine.pressButton(button.label)
+                            renderTick++
                         }
                         CalcButtonView(
                             modifier = Modifier
