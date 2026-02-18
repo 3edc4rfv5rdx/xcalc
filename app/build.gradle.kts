@@ -92,17 +92,26 @@ android {
     }
 }
 
-val renameReleaseApks by tasks.registering {
-    doLast {
-        val outDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
-        val prefix = "xcalc-${releaseVersionName}+${releaseVersionCode}-release"
+abstract class RenameReleaseApks : DefaultTask() {
+    @get:org.gradle.api.tasks.Input
+    abstract val versionName: Property<String>
+
+    @get:org.gradle.api.tasks.Input
+    abstract val versionCode: Property<Int>
+
+    @get:org.gradle.api.tasks.Internal
+    abstract val outputDir: DirectoryProperty
+
+    @org.gradle.api.tasks.TaskAction
+    fun rename() {
+        val outDir = outputDir.get().asFile
+        val prefix = "xcalc-${versionName.get()}+${versionCode.get()}-release"
         val mappings = mapOf(
             "app-universal-release.apk" to "$prefix-universal.apk",
             "app-arm64-v8a-release.apk" to "$prefix-arm64-v8a.apk",
             "app-armeabi-v7a-release.apk" to "$prefix-armeabi-v7a.apk",
             "app-x86_64-release.apk" to "$prefix-x86_64.apk"
         )
-
         mappings.forEach { (srcName, dstName) ->
             val src = File(outDir, srcName)
             if (!src.exists()) return@forEach
@@ -111,6 +120,12 @@ val renameReleaseApks by tasks.registering {
             src.renameTo(dst)
         }
     }
+}
+
+val renameReleaseApks by tasks.registering(RenameReleaseApks::class) {
+    versionName.set(releaseVersionName)
+    versionCode.set(releaseVersionCode)
+    outputDir.set(layout.buildDirectory.dir("outputs/apk/release"))
 }
 
 tasks.configureEach {

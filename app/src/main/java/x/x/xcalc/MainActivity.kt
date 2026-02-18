@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -123,10 +124,13 @@ fun CalculatorScreen() {
             onDismissRequest = { showAbout = false },
             title = { Text("xcalc") },
             text = {
-                Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+                Text(
+                    "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    fontSize = 22.sp
+                )
             },
             confirmButton = {
-                TextButton(onClick = { showAbout = false }) {
+                Button(onClick = { showAbout = false }) {
                     Text("OK")
                 }
             }

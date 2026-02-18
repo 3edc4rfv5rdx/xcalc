@@ -1,8 +1,11 @@
 #!/bin/sh
 
-dat=$(date +%Y%m%d)
-build="$(tr -d '[:space:]' < build_number.txt)"
+apk=$(ls -t app/build/outputs/apk/release/*-universal.apk 2>/dev/null | head -1)
 
-echo ">>>"${dat}+${build}
-adb -s emulator-5554 install -r \
-  app/build/outputs/apk/release/xcalc-0.1.${dat}+${build}-release-universal.apk
+if [ -z "$apk" ]; then
+    echo "No universal release APK found"
+    exit 1
+fi
+
+echo ">>> Installing: $(basename "$apk")"
+adb -s emulator-5554 install -r "$apk"
