@@ -46,6 +46,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -113,6 +114,8 @@ fun FileListScreen(
 
     // Temp file tracking for view action
     val viewedTemps = remember { mutableStateListOf<ViewedTemp>() }
+    val menuContainerColor = Color(0xFF6EC6FF)
+    val menuContentColor = Color(0xFF00263A)
 
     fun refreshItems() {
         val files = repository.getFilesInFolder(currentFolder)
@@ -312,14 +315,24 @@ fun FileListScreen(
                     actions = {
                         Box {
                             IconButton(onClick = { showOverflowMenu = true }) {
-                                Icon(Icons.Default.MoreVert, "More")
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = "More",
+                                    tint = menuContainerColor
+                                )
                             }
                             DropdownMenu(
                                 expanded = showOverflowMenu,
-                                onDismissRequest = { showOverflowMenu = false }
+                                onDismissRequest = { showOverflowMenu = false },
+                                containerColor = menuContainerColor
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("Export all") },
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = menuContentColor,
+                                        leadingIconColor = menuContentColor,
+                                        trailingIconColor = menuContentColor
+                                    ),
                                     onClick = {
                                         showOverflowMenu = false
                                         showExportAllDialog = true
@@ -335,15 +348,25 @@ fun FileListScreen(
             if (selected.isEmpty()) {
                 Box {
                     FloatingActionButton(onClick = { showFabMenu = true }) {
-                        Icon(Icons.Default.Add, "Add")
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Add",
+                            tint = menuContainerColor
+                        )
                     }
                     DropdownMenu(
                         expanded = showFabMenu,
-                        onDismissRequest = { showFabMenu = false }
+                        onDismissRequest = { showFabMenu = false },
+                        containerColor = menuContainerColor
                     ) {
                         DropdownMenuItem(
                             leadingIcon = { Icon(Icons.Default.FileOpen, null) },
                             text = { Text("Add files") },
+                            colors = MenuDefaults.itemColors(
+                                textColor = menuContentColor,
+                                leadingIconColor = menuContentColor,
+                                trailingIconColor = menuContentColor
+                            ),
                             onClick = {
                                 showFabMenu = false
                                 filePickerLauncher.launch(arrayOf("*/*"))
@@ -352,6 +375,11 @@ fun FileListScreen(
                         DropdownMenuItem(
                             leadingIcon = { Icon(Icons.Default.FolderOpen, null) },
                             text = { Text("Add folder") },
+                            colors = MenuDefaults.itemColors(
+                                textColor = menuContentColor,
+                                leadingIconColor = menuContentColor,
+                                trailingIconColor = menuContentColor
+                            ),
                             onClick = {
                                 showFabMenu = false
                                 folderPickerLauncher.launch(null)
@@ -360,6 +388,11 @@ fun FileListScreen(
                         DropdownMenuItem(
                             leadingIcon = { Icon(Icons.Default.CreateNewFolder, null) },
                             text = { Text("New folder") },
+                            colors = MenuDefaults.itemColors(
+                                textColor = menuContentColor,
+                                leadingIconColor = menuContentColor,
+                                trailingIconColor = menuContentColor
+                            ),
                             onClick = {
                                 showFabMenu = false
                                 showNewFolderDialog = true
