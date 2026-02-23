@@ -114,8 +114,8 @@ fun FileListScreen(
 
     // Temp file tracking for view action
     val viewedTemps = remember { mutableStateListOf<ViewedTemp>() }
-    val menuContainerColor = Color(0xFF6EC6FF)
-    val menuContentColor = Color(0xFF00263A)
+    val menuContainerColor = Color(0xFF5FA8B8)
+    val menuContentColor = Color.White
 
     fun refreshItems() {
         val files = repository.getFilesInFolder(currentFolder)
@@ -315,11 +315,7 @@ fun FileListScreen(
                     actions = {
                         Box {
                             IconButton(onClick = { showOverflowMenu = true }) {
-                                Icon(
-                                    Icons.Default.MoreVert,
-                                    contentDescription = "More",
-                                    tint = menuContainerColor
-                                )
+                                Icon(Icons.Default.MoreVert, contentDescription = "More")
                             }
                             DropdownMenu(
                                 expanded = showOverflowMenu,
@@ -347,12 +343,12 @@ fun FileListScreen(
         floatingActionButton = {
             if (selected.isEmpty()) {
                 Box {
-                    FloatingActionButton(onClick = { showFabMenu = true }) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Add",
-                            tint = menuContainerColor
-                        )
+                    FloatingActionButton(
+                        onClick = { showFabMenu = true },
+                        containerColor = menuContainerColor,
+                        contentColor = menuContentColor
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add")
                     }
                     DropdownMenu(
                         expanded = showFabMenu,
