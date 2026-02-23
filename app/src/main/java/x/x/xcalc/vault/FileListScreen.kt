@@ -114,8 +114,8 @@ fun FileListScreen(
 
     // Temp file tracking for view action
     val viewedTemps = remember { mutableStateListOf<ViewedTemp>() }
-    val menuContainerColor = Color(0xFF5FA8B8)
-    val menuContentColor = Color.White
+    val menuContainerColor = Color(0xFF22B2D6)
+    val menuContentColor = Color.Black
 
     fun refreshItems() {
         val files = repository.getFilesInFolder(currentFolder)
