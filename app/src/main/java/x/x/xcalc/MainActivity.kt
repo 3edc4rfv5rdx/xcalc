@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +28,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -215,6 +218,11 @@ private fun DisplayArea(
     onLongPress: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val historyScrollState = rememberScrollState()
+    LaunchedEffect(history.size) {
+        historyScrollState.scrollTo(historyScrollState.maxValue)
+    }
+
     Box(
         modifier = modifier
             .background(
@@ -224,20 +232,31 @@ private fun DisplayArea(
             .pointerInput(Unit) {
                 detectTapGestures(onLongPress = { onLongPress() })
             }
-            .padding(20.dp),
-        contentAlignment = Alignment.BottomEnd
+            .padding(20.dp)
     ) {
-        Column(horizontalAlignment = Alignment.End) {
-            history.forEach { entry ->
-                Text(
-                    text = entry,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 28.sp),
-                    textAlign = TextAlign.End,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Bottom
+        ) {
             if (history.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(historyScrollState),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    history.forEach { entry ->
+                        Text(
+                            text = entry,
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 28.sp),
+                            textAlign = TextAlign.End,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
             }
             Text(

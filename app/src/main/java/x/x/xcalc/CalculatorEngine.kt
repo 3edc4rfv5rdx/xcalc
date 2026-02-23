@@ -52,9 +52,6 @@ class CalculatorEngine {
             formatNumber(result)
         }
         _history.add("${formatNumber(left)} $op ${formatNumber(right)} = $resultText")
-        while (_history.size > 8) {
-            _history.removeAt(0)
-        }
         currentInput = resultText
         lastOp = op
         lastRight = right

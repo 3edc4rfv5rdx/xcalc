@@ -103,10 +103,10 @@ class CalculatorEngineTest {
     }
 
     @Test
-    fun historyMaxEightEntries() {
+    fun historyKeepsAllEntries() {
         press("1", "+", "1", "=") // 1
-        repeat(8) { press("=") }  // 8 more = 9 total, trimmed to 8
-        assertEquals(8, engine.history.size)
+        repeat(8) { press("=") }  // 8 more = 9 total
+        assertEquals(9, engine.history.size)
     }
 
     @Test
