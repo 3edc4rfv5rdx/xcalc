@@ -28,11 +28,18 @@ val versionPrefix = (versionProperties.getProperty("versionPrefix") ?: "0.1").tr
 val releaseVersionName = "$versionPrefix.$dateVersion"
 val releaseVersionCode = buildNumber
 val keyProperties = Properties()
-val keyPropertiesFile = rootProject.file("key.properties")
+val keyPropertiesFile = sequenceOf(
+    File("/home/e/.my-safe/key.properties"),
+    rootProject.file("key.properties")
+).firstOrNull { it.exists() } ?: rootProject.file("key.properties")
 val hasReleaseSigning = keyPropertiesFile.exists().also { exists ->
     if (exists) {
         keyPropertiesFile.inputStream().use { keyProperties.load(it) }
     }
+}
+val keyStoreFile = (keyProperties["storeFile"] as String?)?.let { rawPath ->
+    val candidate = File(rawPath)
+    if (candidate.isAbsolute) candidate else File(keyPropertiesFile.parentFile, rawPath)
 }
 
 android {
@@ -54,7 +61,7 @@ android {
     signingConfigs {
         if (hasReleaseSigning) {
             create("release") {
-                storeFile = rootProject.file(keyProperties["storeFile"] as String)
+                storeFile = keyStoreFile
                 storePassword = keyProperties["storePassword"] as String
                 keyAlias = keyProperties["keyAlias"] as String
                 keyPassword = keyProperties["keyPassword"] as String
