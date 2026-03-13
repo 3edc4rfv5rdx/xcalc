@@ -1,5 +1,7 @@
 package x.x.xcalc
 
+import java.math.BigDecimal
+
 class CalculatorEngine {
     var currentInput: String = "0"
         private set
@@ -17,8 +19,8 @@ class CalculatorEngine {
     val history: List<String> get() = _history
 
     fun formatNumber(value: Double): String {
-        val asLong = value.toLong()
-        return if (value == asLong.toDouble()) asLong.toString() else value.toString()
+        val bd = BigDecimal.valueOf(value).stripTrailingZeros()
+        return bd.toPlainString()
     }
 
     fun resetAll() {
