@@ -78,6 +78,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.zip.CRC32
 
 sealed class FileListItem {
     data class FolderItem(val name: String, val path: String) : FileListItem()
@@ -87,8 +88,20 @@ sealed class FileListItem {
 private data class ViewedTemp(
     val metadata: VaultFileMetadata,
     val tempFile: File,
-    val initialHash: Long
+    val initialCrc: Long
 )
+
+private fun fileCrc32(file: File): Long {
+    val crc = CRC32()
+    file.inputStream().use { input ->
+        val buffer = ByteArray(8192)
+        var bytesRead: Int
+        while (input.read(buffer).also { bytesRead = it } != -1) {
+            crc.update(buffer, 0, bytesRead)
+        }
+    }
+    return crc.value
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -139,8 +152,8 @@ fun FileListScreen(
         onDispose {
             viewedTemps.forEach { viewed ->
                 if (!viewed.tempFile.exists()) return@forEach
-                val newHash = viewed.tempFile.lastModified() + viewed.tempFile.length()
-                if (newHash != viewed.initialHash) {
+                val newCrc = fileCrc32(viewed.tempFile)
+                if (newCrc != viewed.initialCrc) {
                     repository.reEncryptFromTemp(viewed.metadata, viewed.tempFile)
                 }
                 viewed.tempFile.delete()
@@ -233,7 +246,7 @@ fun FileListScreen(
                                             ViewedTemp(
                                                 metadata = meta,
                                                 tempFile = tempFile,
-                                                initialHash = tempFile.lastModified() + tempFile.length()
+                                                initialCrc = fileCrc32(tempFile)
                                             )
                                         )
                                         val uri = FileProvider.getUriForFile(
