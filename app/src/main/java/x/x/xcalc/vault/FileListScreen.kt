@@ -1,7 +1,6 @@
 package x.x.xcalc.vault
 
 import android.content.Intent
-import android.os.Environment
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -83,6 +82,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.zip.CRC32
 
+private enum class ExportMode { SELECTED, ALL }
+
 sealed class FileListItem {
     data class FolderItem(val name: String, val path: String) : FileListItem()
     data class FileItem(val metadata: VaultFileMetadata) : FileListItem()
@@ -126,6 +127,7 @@ fun FileListScreen(
     var showExportDialog by remember { mutableStateOf(false) }
     var showExportAllDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var pendingExportMode by remember { mutableStateOf<ExportMode?>(null) }
     var renameTarget by remember { mutableStateOf<Any?>(null) } // VaultFileMetadata or String (folder path)
 
     // Temp file tracking for view action
@@ -199,6 +201,52 @@ fun FileListScreen(
                 }
                 refreshItems()
                 Toast.makeText(context, "Imported ${imported.size} file(s)", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val exportFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        val mode = pendingExportMode
+        pendingExportMode = null
+        if (uri == null || mode == null) return@rememberLauncherForActivityResult
+
+        scope.launch {
+            when (mode) {
+                ExportMode.SELECTED -> {
+                    val filesToExport = selectedFiles()
+                    val exportedCount = withContext(Dispatchers.IO) {
+                        val targetDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
+                            ?: return@withContext 0
+                        filesToExport.count { repository.exportFileToTree(it, targetDir) }
+                    }
+                    val failedCount = filesToExport.size - exportedCount
+                    val message = if (failedCount == 0) {
+                        "Exported ${exportedCount} file(s)"
+                    } else {
+                        "Exported ${exportedCount}, failed $failedCount"
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    if (exportedCount > 0) {
+                        selected.clear()
+                    }
+                }
+                ExportMode.ALL -> {
+                    val totalFiles = withContext(Dispatchers.IO) {
+                        repository.loadMetadata().count { it.mimeType != "inode/directory" }
+                    }
+                    val exportedCount = withContext(Dispatchers.IO) {
+                        repository.exportAllToTree(uri)
+                    }
+                    val failedCount = totalFiles - exportedCount
+                    val message = if (failedCount == 0) {
+                        "Exported ${exportedCount} file(s)"
+                    } else {
+                        "Exported ${exportedCount}, failed $failedCount"
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -645,23 +693,12 @@ fun FileListScreen(
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
             title = { Text("Export") },
-            text = { Text("Export $count file(s) to Documents/?") },
+            text = { Text("Choose a destination folder for $count file(s).") },
             confirmButton = {
                 Button(onClick = {
                     showExportDialog = false
-                    val filesToExport = selectedFiles()
-                    scope.launch {
-                        withContext(Dispatchers.IO) {
-                            val docsDir = Environment.getExternalStoragePublicDirectory(
-                                Environment.DIRECTORY_DOCUMENTS
-                            )
-                            for (meta in filesToExport) {
-                                repository.exportFile(meta, docsDir)
-                            }
-                        }
-                        Toast.makeText(context, "Exported to Documents/", Toast.LENGTH_SHORT).show()
-                        selected.clear()
-                    }
+                    pendingExportMode = ExportMode.SELECTED
+                    exportFolderLauncher.launch(null)
                 }) { Text("Export") }
             },
             dismissButton = {
@@ -675,16 +712,12 @@ fun FileListScreen(
         AlertDialog(
             onDismissRequest = { showExportAllDialog = false },
             title = { Text("Export all") },
-            text = { Text("Export all files to Documents/xcalc_export/?") },
+            text = { Text("Choose a destination folder for all exported files.") },
             confirmButton = {
                 Button(onClick = {
                     showExportAllDialog = false
-                    scope.launch {
-                        withContext(Dispatchers.IO) {
-                            repository.exportAll()
-                        }
-                        Toast.makeText(context, "Exported to Documents/xcalc_export/", Toast.LENGTH_SHORT).show()
-                    }
+                    pendingExportMode = ExportMode.ALL
+                    exportFolderLauncher.launch(null)
                 }) { Text("Export") }
             },
             dismissButton = {

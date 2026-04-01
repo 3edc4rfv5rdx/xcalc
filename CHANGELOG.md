@@ -4,6 +4,7 @@
 
 ## Unreleased
 - E Preserve edited vault temp files when leaving the vault screen
+- E Switch vault export to SAF destination folders for modern Android
 
 ## 0.3.20260401+74
 - R Stream encryption instead of loading entire file into memory

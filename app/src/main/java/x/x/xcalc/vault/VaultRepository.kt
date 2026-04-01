@@ -238,18 +238,34 @@ class VaultRepository(private val context: Context) {
         return outFile
     }
 
-    fun exportAll(): File {
-        val exportDir = File(
-            android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS),
-            "xcalc_export"
-        )
-        exportDir.mkdirs()
-        val all = loadMetadata().filter { it.mimeType != "inode/directory" }
-        for (meta in all) {
-            val subDir = if (meta.relativePath.isEmpty()) exportDir else File(exportDir, meta.relativePath).apply { mkdirs() }
-            exportFile(meta, subDir)
+    fun exportFileToTree(metadata: VaultFileMetadata, destDir: DocumentFile): Boolean {
+        val encFile = File(filesDir, "${metadata.id}.enc")
+        if (!encFile.exists() || !destDir.isDirectory) return false
+        val outDoc = uniqueDocumentFile(destDir, metadata.name, metadata.mimeType) ?: return false
+        return try {
+            encFile.inputStream().use { input ->
+                context.contentResolver.openOutputStream(outDoc.uri)?.use { output ->
+                    CryptoManager.decrypt(input, output)
+                } ?: return false
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to export file ${metadata.id}", e)
+            false
         }
-        return exportDir
+    }
+
+    fun exportAllToTree(treeUri: Uri): Int {
+        val rootDir = DocumentFile.fromTreeUri(context, treeUri) ?: return 0
+        val all = loadMetadata().filter { it.mimeType != "inode/directory" }
+        var exportedCount = 0
+        for (meta in all) {
+            val subDir = ensureDocumentPath(rootDir, meta.relativePath) ?: continue
+            if (exportFileToTree(meta, subDir)) {
+                exportedCount++
+            }
+        }
+        return exportedCount
     }
 
     @Synchronized
@@ -373,6 +389,32 @@ class VaultRepository(private val context: Context) {
             counter++
         }
         return candidate
+    }
+
+    private fun uniqueDocumentFile(dir: DocumentFile, name: String, mimeType: String): DocumentFile? {
+        val baseName = name.substringBeforeLast('.', name)
+        val ext = name.substringAfterLast('.', "").let { if (it == name) "" else ".$it" }
+        var candidateName = name
+        var counter = 1
+        while (dir.findFile(candidateName) != null) {
+            candidateName = "${baseName} ($counter)$ext"
+            counter++
+        }
+        return dir.createFile(mimeType, candidateName)
+    }
+
+    private fun ensureDocumentPath(rootDir: DocumentFile, relativePath: String): DocumentFile? {
+        var current = rootDir
+        if (relativePath.isEmpty()) return current
+        for (segment in relativePath.split("/")) {
+            val existing = current.findFile(segment)
+            current = when {
+                existing?.isDirectory == true -> existing
+                existing == null -> current.createDirectory(segment)
+                else -> null
+            } ?: return null
+        }
+        return current
     }
 
     private fun sanitizeName(name: String): String {
