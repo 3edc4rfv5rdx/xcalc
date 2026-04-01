@@ -1,11 +1,12 @@
 package x.x.xcalc
 
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 class CalculatorEngine {
     var currentInput: String = "0"
         private set
-    var storedValue: Double? = null
+    var storedValue: BigDecimal? = null
         private set
     var pendingOp: String? = null
         private set
@@ -13,7 +14,7 @@ class CalculatorEngine {
         private set
     var lastOp: String? = null
         private set
-    var lastRight: Double? = null
+    var lastRight: BigDecimal? = null
         private set
     private val _history = mutableListOf<String>()
     val history: List<String> get() = _history
@@ -21,6 +22,14 @@ class CalculatorEngine {
     fun formatNumber(value: Double): String {
         val bd = BigDecimal.valueOf(value).stripTrailingZeros()
         return bd.toPlainString()
+    }
+
+    private fun formatNumber(value: BigDecimal): String {
+        return value.stripTrailingZeros().toPlainString()
+    }
+
+    private fun parseInput(): BigDecimal? {
+        return currentInput.toBigDecimalOrNull()
     }
 
     fun resetAll() {
@@ -35,9 +44,9 @@ class CalculatorEngine {
 
     fun applyEquals() {
         val op = pendingOp ?: lastOp ?: return
-        val left = storedValue ?: currentInput.toDoubleOrNull() ?: return
+        val left = storedValue ?: parseInput() ?: return
         val right = if (pendingOp != null) {
-            currentInput.toDoubleOrNull() ?: return
+            parseInput() ?: return
         } else {
             lastRight ?: return
         }
@@ -45,14 +54,10 @@ class CalculatorEngine {
             "+" -> left + right
             "−" -> left - right
             "×" -> left * right
-            "÷" -> if (right == 0.0) Double.NaN else left / right
+            "÷" -> if (right.compareTo(BigDecimal.ZERO) == 0) null else left.divide(right, 16, RoundingMode.HALF_UP)
             else -> right
         }
-        val resultText = if (result.isNaN() || result.isInfinite()) {
-            "Error"
-        } else {
-            formatNumber(result)
-        }
+        val resultText = result?.let(::formatNumber) ?: "Error"
         _history.add("${formatNumber(left)} $op ${formatNumber(right)} = $resultText")
         currentInput = resultText
         lastOp = op
@@ -84,10 +89,10 @@ class CalculatorEngine {
                 }
             }
             label in listOf("+", "−", "×", "÷") -> {
-                val current = currentInput.toDoubleOrNull() ?: 0.0
+                val current = parseInput() ?: BigDecimal.ZERO
                 if (pendingOp != null && !resetInput) {
                     applyEquals()
-                    storedValue = currentInput.toDoubleOrNull()
+                    storedValue = parseInput()
                     lastOp = null
                     lastRight = null
                 } else if (storedValue == null) {
@@ -100,9 +105,13 @@ class CalculatorEngine {
                 applyEquals()
             }
             label == "%" -> {
-                val current = currentInput.toDoubleOrNull() ?: 0.0
+                val current = parseInput() ?: BigDecimal.ZERO
                 val base = storedValue
-                val percentValue = if (base != null) base * current / 100.0 else current / 100.0
+                val percentValue = if (base != null) {
+                    base.multiply(current).divide(BigDecimal(100))
+                } else {
+                    current.divide(BigDecimal(100))
+                }
                 currentInput = formatNumber(percentValue)
                 resetInput = false
             }

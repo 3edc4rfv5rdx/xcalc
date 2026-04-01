@@ -46,6 +46,12 @@ class CalculatorEngineTest {
         assertEquals("Error", engine.currentInput)
     }
 
+    @Test
+    fun decimalAdditionAvoidsFloatingPointArtifacts() {
+        press("0", ".", "1", "+", "0", ".", "2", "=")
+        assertEquals("0.3", engine.currentInput)
+    }
+
     // --- Chained operations ---
 
     @Test
