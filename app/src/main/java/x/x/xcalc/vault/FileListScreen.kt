@@ -71,6 +71,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import x.x.xcalc.ui.theme.FolderIconColor
+import x.x.xcalc.ui.theme.VaultAccent
+import x.x.xcalc.ui.theme.VaultAccentContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -127,8 +130,8 @@ fun FileListScreen(
 
     // Temp file tracking for view action
     val viewedTemps = remember { mutableStateListOf<ViewedTemp>() }
-    val menuContainerColor = Color(0xFF22B2D6)
-    val menuContentColor = Color.Black
+    val menuContainerColor = VaultAccent
+    val menuContentColor = VaultAccentContent
 
     fun refreshItems() {
         val files = repository.getFilesInFolder(currentFolder)
@@ -485,7 +488,7 @@ fun FileListScreen(
                             contentDescription = null,
                             modifier = Modifier.size(32.dp),
                             tint = when (item) {
-                                is FileListItem.FolderItem -> Color(0xFFFFB74D)
+                                is FileListItem.FolderItem -> FolderIconColor
                                 is FileListItem.FileItem -> MaterialTheme.colorScheme.onSurfaceVariant
                             }
                         )

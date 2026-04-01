@@ -49,6 +49,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import x.x.xcalc.BuildConfig
+import x.x.xcalc.ui.theme.DigitButton
+import x.x.xcalc.ui.theme.DigitButtonContent
+import x.x.xcalc.ui.theme.OperatorButton
+import x.x.xcalc.ui.theme.OperatorButtonContent
 import x.x.xcalc.ui.theme.XcalcTheme
 import x.x.xcalc.vault.VaultScreen
 import kotlinx.coroutines.delay
@@ -287,12 +291,12 @@ private fun CalcButtonView(
             contentColor = MaterialTheme.colorScheme.onPrimary
         }
         button.isOperator -> {
-            containerColor = Color(0xFFE9967A) // color operators
-            contentColor = Color(0xFF000000)
+            containerColor = OperatorButton
+            contentColor = OperatorButtonContent
         }
         else -> {
-            containerColor = Color(0xFFFFD54F) // color digits
-            contentColor = Color(0xFF3D2F00)
+            containerColor = DigitButton
+            contentColor = DigitButtonContent
         }
     }
 

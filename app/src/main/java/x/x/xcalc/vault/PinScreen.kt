@@ -36,6 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import x.x.xcalc.ui.theme.DigitButton
+import x.x.xcalc.ui.theme.DigitButtonContent
 import kotlinx.coroutines.delay
 
 enum class PinMode { SETUP, CONFIRM, UNLOCK }
@@ -226,12 +228,12 @@ private fun PinButton(
     val containerColor = if (isAction) {
         MaterialTheme.colorScheme.primary
     } else {
-        Color(0xFFFFD54F)
+        DigitButton
     }
     val contentColor = if (isAction) {
         MaterialTheme.colorScheme.onPrimary
     } else {
-        Color(0xFF3D2F00)
+        DigitButtonContent
     }
 
     Surface(
