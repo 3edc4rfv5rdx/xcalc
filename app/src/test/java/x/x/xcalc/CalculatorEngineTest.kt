@@ -81,22 +81,26 @@ class CalculatorEngineTest {
         assertEquals("11", engine.currentInput)
     }
 
-    // --- Percent ---
+    // --- Sign toggle ---
 
     @Test
-    fun percentWithBase() {
-        // 200 + 10% should show 20 (10% of 200), then = gives 220
-        press("2", "0", "0", "+")
-        press("1", "0", "%")
-        assertEquals("20", engine.currentInput)
-        press("=")
-        assertEquals("220", engine.currentInput)
+    fun toggleSignOnCurrentValue() {
+        press("5", "+/-")
+        assertEquals("-5", engine.currentInput)
     }
 
     @Test
-    fun percentWithoutBase() {
-        press("5", "0", "%")
-        assertEquals("0.5", engine.currentInput)
+    fun toggleSignOnResult() {
+        press("9", "−", "4", "=")
+        assertEquals("5", engine.currentInput)
+        press("+/-")
+        assertEquals("-5", engine.currentInput)
+    }
+
+    @Test
+    fun toggleSignForSecondOperand() {
+        press("5", "×", "+/-", "1", "=")
+        assertEquals("-5", engine.currentInput)
     }
 
     // --- History ---

@@ -98,7 +98,7 @@ fun CalculatorScreen() {
         listOf(
             CalcButton("AC", isEmphasis = true),
             CalcButton("C", isEmphasis = true),
-            CalcButton("%", isOperator = true),
+            CalcButton("+/-", isOperator = true),
             CalcButton("÷", isOperator = true)
         ),
         listOf(

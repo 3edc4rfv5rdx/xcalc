@@ -32,6 +32,22 @@ class CalculatorEngine {
         return currentInput.toBigDecimalOrNull()
     }
 
+    private fun toggleSign() {
+        if (resetInput && pendingOp != null) {
+            currentInput = "-0"
+            resetInput = false
+            return
+        }
+        val current = parseInput() ?: BigDecimal.ZERO
+        val toggled = current.negate()
+        currentInput = when {
+            toggled.compareTo(BigDecimal.ZERO) == 0 && currentInput.startsWith("-") -> "0"
+            toggled.compareTo(BigDecimal.ZERO) == 0 -> "-0"
+            else -> formatNumber(toggled)
+        }
+        resetInput = false
+    }
+
     fun resetAll() {
         currentInput = "0"
         storedValue = null
@@ -106,17 +122,7 @@ class CalculatorEngine {
             label == "=" -> {
                 applyEquals()
             }
-            label == "%" -> {
-                val current = parseInput() ?: BigDecimal.ZERO
-                val base = storedValue
-                val percentValue = if (base != null) {
-                    base.multiply(current).divide(BigDecimal(100))
-                } else {
-                    current.divide(BigDecimal(100))
-                }
-                currentInput = formatNumber(percentValue)
-                resetInput = false
-            }
+            label == "+/-" -> toggleSign()
             label == "." -> {
                 if (resetInput) {
                     currentInput = "0."
@@ -128,6 +134,8 @@ class CalculatorEngine {
             label.all { it.isDigit() } -> {
                 if (resetInput || currentInput == "0") {
                     currentInput = label
+                } else if (currentInput == "-0") {
+                    currentInput = "-$label"
                 } else {
                     currentInput += label
                 }
