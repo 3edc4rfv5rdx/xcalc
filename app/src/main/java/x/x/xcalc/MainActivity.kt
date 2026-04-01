@@ -78,14 +78,17 @@ private data class CalcButton(
 @Composable
 fun CalculatorScreen() {
     val engine = remember { CalculatorEngine() }
-    var renderTick by remember { mutableIntStateOf(0) }
     val showVault = remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
     var backspaceTapCount by remember { mutableIntStateOf(0) }
 
-    // Read engine state (renderTick forces recomposition)
-    val currentInput = if (renderTick >= 0) engine.currentInput else ""
-    val history = engine.history.toList()
+    var currentInput by remember { mutableStateOf(engine.currentInput) }
+    var history by remember { mutableStateOf(engine.history.toList()) }
+
+    fun syncState() {
+        currentInput = engine.currentInput
+        history = engine.history.toList()
+    }
 
     val rows = listOf(
         listOf(
@@ -183,7 +186,7 @@ fun CalculatorScreen() {
                                 backspaceTapCount = 0
                             }
                             engine.pressButton(button.label)
-                            renderTick++
+                            syncState()
                         }
                         CalcButtonView(
                             modifier = Modifier
