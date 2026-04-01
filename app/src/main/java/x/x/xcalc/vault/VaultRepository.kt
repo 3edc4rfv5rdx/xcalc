@@ -23,6 +23,7 @@ class VaultRepository(private val context: Context) {
 
     private var metadataCache: MutableList<VaultFileMetadata>? = null
 
+    @Synchronized
     fun loadMetadata(): List<VaultFileMetadata> {
         metadataCache?.let { return it }
         if (!metadataFile.exists()) {
@@ -42,6 +43,7 @@ class VaultRepository(private val context: Context) {
         return metadataCache!!
     }
 
+    @Synchronized
     private fun saveMetadata() {
         val json = gson.toJson(metadataCache ?: return)
         val encrypted = CryptoManager.encryptBytes(json.toByteArray())
@@ -87,6 +89,7 @@ class VaultRepository(private val context: Context) {
 
     private val folderMarkers = mutableSetOf<String>()
 
+    @Synchronized
     fun createFolder(parentPath: String, name: String): String {
         val folderPath = if (parentPath.isEmpty()) name else "$parentPath/$name"
         folderMarkers.add(folderPath)
@@ -104,6 +107,7 @@ class VaultRepository(private val context: Context) {
         return folderPath
     }
 
+    @Synchronized
     fun importFile(uri: Uri, targetFolder: String): VaultFileMetadata? {
         val resolver = context.contentResolver
         val displayName = getDisplayName(uri) ?: "unknown"
@@ -195,6 +199,7 @@ class VaultRepository(private val context: Context) {
         }
     }
 
+    @Synchronized
     fun reEncryptFromTemp(metadata: VaultFileMetadata, tempFile: File) {
         val encFile = File(filesDir, "${metadata.id}.enc")
         tempFile.inputStream().use { input ->
@@ -238,6 +243,7 @@ class VaultRepository(private val context: Context) {
         return exportDir
     }
 
+    @Synchronized
     fun deleteFile(metadata: VaultFileMetadata) {
         val encFile = File(filesDir, "${metadata.id}.enc")
         encFile.delete()
@@ -247,6 +253,7 @@ class VaultRepository(private val context: Context) {
         saveMetadata()
     }
 
+    @Synchronized
     fun deleteFolder(folderPath: String) {
         val list = loadMetadata() as MutableList
         val toDelete = list.filter {
@@ -262,6 +269,7 @@ class VaultRepository(private val context: Context) {
         saveMetadata()
     }
 
+    @Synchronized
     fun moveFiles(files: List<VaultFileMetadata>, targetFolder: String) {
         val list = loadMetadata() as MutableList
         for (meta in files) {
@@ -274,6 +282,7 @@ class VaultRepository(private val context: Context) {
         saveMetadata()
     }
 
+    @Synchronized
     fun moveFolder(oldPath: String, targetParentPath: String): Boolean {
         if (oldPath.isEmpty()) return false
         if (targetParentPath == oldPath || targetParentPath.startsWith("$oldPath/")) return false
@@ -296,6 +305,7 @@ class VaultRepository(private val context: Context) {
         return true
     }
 
+    @Synchronized
     fun renameFile(metadata: VaultFileMetadata, newName: String) {
         val list = loadMetadata() as MutableList
         val idx = list.indexOfFirst { it.id == metadata.id }
@@ -306,6 +316,7 @@ class VaultRepository(private val context: Context) {
         }
     }
 
+    @Synchronized
     fun renameFolder(oldPath: String, newName: String) {
         val parts = oldPath.split("/")
         val parentPath = parts.dropLast(1).joinToString("/")
