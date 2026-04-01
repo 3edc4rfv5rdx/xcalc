@@ -93,7 +93,9 @@ class VaultRepository(private val context: Context) {
 
     @Synchronized
     fun createFolder(parentPath: String, name: String): String {
-        val folderPath = if (parentPath.isEmpty()) name else "$parentPath/$name"
+        val sanitized = sanitizeName(name)
+        require(sanitized.isNotEmpty()) { "Invalid folder name" }
+        val folderPath = if (parentPath.isEmpty()) sanitized else "$parentPath/$sanitized"
         // Create a hidden marker file to persist the folder
         val marker = VaultFileMetadata(
             name = ".folder",
@@ -304,10 +306,12 @@ class VaultRepository(private val context: Context) {
 
     @Synchronized
     fun renameFile(metadata: VaultFileMetadata, newName: String) {
+        val sanitized = sanitizeName(newName)
+        if (sanitized.isEmpty()) return
         val list = mutableMetadata()
         val idx = list.indexOfFirst { it.id == metadata.id }
         if (idx >= 0) {
-            list[idx] = list[idx].copy(name = newName)
+            list[idx] = list[idx].copy(name = sanitized)
             metadataCache = list
             saveMetadata()
         }
@@ -315,9 +319,11 @@ class VaultRepository(private val context: Context) {
 
     @Synchronized
     fun renameFolder(oldPath: String, newName: String) {
+        val sanitized = sanitizeName(newName)
+        if (sanitized.isEmpty()) return
         val parts = oldPath.split("/")
         val parentPath = parts.dropLast(1).joinToString("/")
-        val newPath = if (parentPath.isEmpty()) newName else "$parentPath/$newName"
+        val newPath = if (parentPath.isEmpty()) sanitized else "$parentPath/$sanitized"
 
         remapFolderPaths(oldPath, newPath)
     }
@@ -354,6 +360,13 @@ class VaultRepository(private val context: Context) {
         } catch (e: Exception) {
             Log.w(TAG, "Failed to delete original tree: $uri", e)
         }
+    }
+
+    private fun sanitizeName(name: String): String {
+        return name.trim()
+            .replace("/", "_")
+            .replace("\u0000", "")
+            .let { if (it == "." || it == "..") "" else it }
     }
 
     private fun getDisplayName(uri: Uri): String? {
