@@ -157,6 +157,15 @@ class CalculatorEngineTest {
         assertEquals("0", engine.currentInput)
     }
 
+    @Test
+    fun backspaceAfterOperatorDoesNotClearDisplay() {
+        press("1", "2", "3", "+")
+        press("backspace")
+        assertEquals("123", engine.currentInput)
+        press("=")
+        assertEquals("246", engine.currentInput)
+    }
+
     // --- formatNumber ---
 
     @Test

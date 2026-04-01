@@ -7,6 +7,7 @@
 - E Switch vault export to SAF destination folders for modern Android
 - E Use BigDecimal calculator math to avoid floating-point display artifacts
 - E Fix vault export screen compile error after SAF refactor
+- E Keep display unchanged on backspace before second operand input
 
 ## 0.3.20260401+74
 - R Stream encryption instead of loading entire file into memory

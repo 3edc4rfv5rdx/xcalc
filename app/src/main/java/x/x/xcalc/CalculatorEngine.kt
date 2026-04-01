@@ -79,8 +79,10 @@ class CalculatorEngine {
             }
             label == "backspace" -> {
                 if (resetInput) {
-                    currentInput = "0"
-                    resetInput = false
+                    if (pendingOp == null) {
+                        currentInput = "0"
+                        resetInput = false
+                    }
                 } else {
                     currentInput = currentInput.dropLast(1)
                     if (currentInput.isEmpty() || currentInput == "-") {
