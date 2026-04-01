@@ -1,0 +1,22 @@
+Проверка качества кода xcalc — список исправлений
+====================================================
+
+Критические:
+[x] 1. CryptoManager.encrypt() загружает весь файл в память — OOM на больших файлах
+[x] 2. Проглатывание исключений (VaultRepository: loadMetadata, importFile, decryptToTemp, deleteOriginal/Tree)
+[x] 3. Потокобезопасность metadataCache (чтение/запись из разных потоков без синхронизации)
+
+Средние:
+[x] 4. Дублирование кода moveFolder / renameFolder
+[x] 5. Небезопасный каст loadMetadata() as MutableList (~10 мест)
+[x] 6. folderMarkers — мёртвый код
+[x] 7. Хеш файла (lastModified + length) ненадёжен для детекции изменений
+[x] 8. renderTick — антипаттерн в Compose, заменить на mutableStateOf / StateFlow
+[x] 9. formatFileSize показывает размер зашифрованного файла, а не оригинального
+
+Мелкие:
+[x] 10. Hardcoded цвета вместо темы
+[x] 11. SimpleDateFormat создаётся при каждом вызове
+[x] 12. @Suppress("ASSIGNED_VALUE_IS_NEVER_READ") вместо исправления
+[x] 13. Нет валидации имён папок/файлов (/, .., пустая строка)
+[x] 14. exportAll() перезаписывает файлы без предупреждения
