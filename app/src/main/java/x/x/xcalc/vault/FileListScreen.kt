@@ -205,6 +205,15 @@ fun FileListScreen(
         }
     }
 
+    fun selectedFiles(): List<VaultFileMetadata> =
+        items.filterIsInstance<FileListItem.FileItem>()
+            .filter { it.metadata.id in selected }
+            .map { it.metadata }
+
+    fun selectedFolders(): List<FileListItem.FolderItem> =
+        items.filterIsInstance<FileListItem.FolderItem>()
+            .filter { it.path in selected }
+
     val exportFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -219,7 +228,13 @@ fun FileListScreen(
                     val exportedCount = withContext(Dispatchers.IO) {
                         val targetDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
                             ?: return@withContext 0
-                        filesToExport.count { repository.exportFileToTree(it, targetDir) }
+                        var count = 0
+                        for (metadata in filesToExport) {
+                            if (repository.exportFileToTree(metadata, targetDir)) {
+                                count++
+                            }
+                        }
+                        count
                     }
                     val failedCount = filesToExport.size - exportedCount
                     val message = if (failedCount == 0) {
@@ -250,15 +265,6 @@ fun FileListScreen(
             }
         }
     }
-
-    fun selectedFiles(): List<VaultFileMetadata> =
-        items.filterIsInstance<FileListItem.FileItem>()
-            .filter { it.metadata.id in selected }
-            .map { it.metadata }
-
-    fun selectedFolders(): List<FileListItem.FolderItem> =
-        items.filterIsInstance<FileListItem.FolderItem>()
-            .filter { it.path in selected }
 
     fun handleBack() {
         when {
