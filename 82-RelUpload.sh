@@ -64,11 +64,10 @@ else
     echo "No previous tag, collecting entire changelog."
 fi
 
-awk -v cur="## ${VERSION}+${BUILD}" -v stop_build="$PREV_BUILD" '
+awk -v cur="## ${VERSION}+${BUILD}" -v stop="$STOP_HEADER" '
     $0 == cur { capture=1; next }
-    capture && stop_build != "" && /^## / {
-        b = $0; sub(/.*\+/, "", b); sub(/[^0-9].*/, "", b)
-        if (b+0 <= stop_build+0) exit
+    capture && /^## / {
+        if (stop == "" || $0 == stop) exit
         print ""; print $0; next
     }
     capture { print }
