@@ -734,7 +734,8 @@ private fun formatFileSize(bytes: Long): String {
     }
 }
 
+private val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+
 private fun formatDate(millis: Long): String {
-    val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-    return sdf.format(Date(millis))
+    return dateFormat.format(Date(millis))
 }
