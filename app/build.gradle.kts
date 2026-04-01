@@ -1,4 +1,3 @@
-import java.util.Calendar
 import java.util.Properties
 
 plugins {
@@ -6,21 +5,13 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-val cal: Calendar = Calendar.getInstance()
-val dateVersion = "%d%02d%02d".format(
-    cal.get(Calendar.YEAR),
-    cal.get(Calendar.MONTH) + 1,
-    cal.get(Calendar.DAY_OF_MONTH)
-)
-val versionProperties = Properties()
-val versionPropertiesFile = rootProject.file("version.properties")
-if (versionPropertiesFile.exists()) {
-    versionPropertiesFile.inputStream().use { versionProperties.load(it) }
+val buildNumberFile = rootProject.file("build_number.txt")
+val buildProps = Properties()
+if (buildNumberFile.exists()) {
+    buildNumberFile.inputStream().use { buildProps.load(it) }
 }
-val versionPrefix = (versionProperties.getProperty("versionPrefix") ?: "0.1").trim()
-val buildNumber = versionProperties.getProperty("buildNumber")?.trim()?.toIntOrNull() ?: 1
-val releaseVersionName = "$versionPrefix.$dateVersion"
-val releaseVersionCode = buildNumber
+val releaseVersionName = buildProps.getProperty("version") ?: "0.1.0"
+val releaseVersionCode = buildProps.getProperty("build")?.trim()?.toIntOrNull() ?: 1
 val keyProperties = Properties()
 val keyPropertiesFile = sequenceOf(
     File("/home/e/.my-safe/key.properties"),
