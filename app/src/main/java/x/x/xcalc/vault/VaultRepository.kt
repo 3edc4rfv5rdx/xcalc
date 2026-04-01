@@ -8,6 +8,8 @@ import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
+import java.io.FilterInputStream
+import java.io.InputStream
 
 class VaultRepository(private val context: Context) {
 
@@ -125,11 +127,14 @@ class VaultRepository(private val context: Context) {
         )
 
         val encFile = File(filesDir, "${metadata.id}.enc")
+        var originalSize = 0L
         try {
             resolver.openInputStream(uri)?.use { input ->
+                val counting = CountingInputStream(input)
                 encFile.outputStream().use { output ->
-                    CryptoManager.encrypt(input, output)
+                    CryptoManager.encrypt(counting, output)
                 }
+                originalSize = counting.bytesRead
             } ?: return null
         } catch (e: Exception) {
             Log.e(TAG, "Failed to import file", e)
@@ -138,7 +143,7 @@ class VaultRepository(private val context: Context) {
         }
 
         metadata.let {
-            val updated = it.copy(size = encFile.length())
+            val updated = it.copy(size = originalSize)
             val list = mutableMetadata()
             list.add(updated)
             metadataCache = list
@@ -201,15 +206,18 @@ class VaultRepository(private val context: Context) {
     @Synchronized
     fun reEncryptFromTemp(metadata: VaultFileMetadata, tempFile: File) {
         val encFile = File(filesDir, "${metadata.id}.enc")
+        val originalSize: Long
         tempFile.inputStream().use { input ->
+            val counting = CountingInputStream(input)
             encFile.outputStream().use { output ->
-                CryptoManager.encrypt(input, output)
+                CryptoManager.encrypt(counting, output)
             }
+            originalSize = counting.bytesRead
         }
         val list = mutableMetadata()
         val idx = list.indexOfFirst { it.id == metadata.id }
         if (idx >= 0) {
-            list[idx] = list[idx].copy(size = encFile.length(), dateAdded = System.currentTimeMillis())
+            list[idx] = list[idx].copy(size = originalSize, dateAdded = System.currentTimeMillis())
             metadataCache = list
             saveMetadata()
         }
@@ -360,5 +368,22 @@ class VaultRepository(private val context: Context) {
 
     fun getEncryptedFile(metadata: VaultFileMetadata): File {
         return File(filesDir, "${metadata.id}.enc")
+    }
+}
+
+private class CountingInputStream(input: InputStream) : FilterInputStream(input) {
+    var bytesRead: Long = 0L
+        private set
+
+    override fun read(): Int {
+        val b = super.read()
+        if (b >= 0) bytesRead++
+        return b
+    }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int {
+        val n = super.read(b, off, len)
+        if (n > 0) bytesRead += n
+        return n
     }
 }
