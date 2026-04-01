@@ -133,6 +133,18 @@ fun FileListScreen(
     val menuContainerColor = VaultAccent
     val menuContentColor = VaultAccentContent
 
+    fun persistViewedTemps() {
+        viewedTemps.forEach { viewed ->
+            if (!viewed.tempFile.exists()) return@forEach
+            val newCrc = fileCrc32(viewed.tempFile)
+            if (newCrc != viewed.initialCrc) {
+                repository.reEncryptFromTemp(viewed.metadata, viewed.tempFile)
+            }
+            viewed.tempFile.delete()
+        }
+        viewedTemps.clear()
+    }
+
     fun refreshItems() {
         val files = repository.getFilesInFolder(currentFolder)
             .filter { it.mimeType != "inode/directory" }
@@ -153,15 +165,7 @@ fun FileListScreen(
     // Persist edits and clean temp files once we leave this screen.
     DisposableEffect(Unit) {
         onDispose {
-            viewedTemps.forEach { viewed ->
-                if (!viewed.tempFile.exists()) return@forEach
-                val newCrc = fileCrc32(viewed.tempFile)
-                if (newCrc != viewed.initialCrc) {
-                    repository.reEncryptFromTemp(viewed.metadata, viewed.tempFile)
-                }
-                viewed.tempFile.delete()
-            }
-            viewedTemps.clear()
+            persistViewedTemps()
         }
     }
 
@@ -218,7 +222,7 @@ fun FileListScreen(
                 refreshItems()
             }
             else -> {
-                repository.clearTemp()
+                persistViewedTemps()
                 onBack()
             }
         }

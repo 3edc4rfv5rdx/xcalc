@@ -2,6 +2,9 @@
 
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
+## Unreleased
+- E Preserve edited vault temp files when leaving the vault screen
+
 ## 0.3.20260401+74
 - R Stream encryption instead of loading entire file into memory
 - E Add error logging instead of silently swallowing exceptions
