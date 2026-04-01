@@ -229,7 +229,7 @@ class VaultRepository(private val context: Context) {
         val encFile = File(filesDir, "${metadata.id}.enc")
         if (!encFile.exists()) return null
         destDir.mkdirs()
-        val outFile = File(destDir, metadata.name)
+        val outFile = uniqueFile(destDir, metadata.name)
         encFile.inputStream().use { input ->
             outFile.outputStream().use { output ->
                 CryptoManager.decrypt(input, output)
@@ -360,6 +360,19 @@ class VaultRepository(private val context: Context) {
         } catch (e: Exception) {
             Log.w(TAG, "Failed to delete original tree: $uri", e)
         }
+    }
+
+    private fun uniqueFile(dir: File, name: String): File {
+        var candidate = File(dir, name)
+        if (!candidate.exists()) return candidate
+        val baseName = name.substringBeforeLast('.', name)
+        val ext = name.substringAfterLast('.', "").let { if (it == name) "" else ".$it" }
+        var counter = 1
+        while (candidate.exists()) {
+            candidate = File(dir, "${baseName} ($counter)$ext")
+            counter++
+        }
+        return candidate
     }
 
     private fun sanitizeName(name: String): String {
