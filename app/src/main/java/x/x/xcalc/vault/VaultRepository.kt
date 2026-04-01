@@ -89,12 +89,9 @@ class VaultRepository(private val context: Context) {
         return paths.sorted()
     }
 
-    private val folderMarkers = mutableSetOf<String>()
-
     @Synchronized
     fun createFolder(parentPath: String, name: String): String {
         val folderPath = if (parentPath.isEmpty()) name else "$parentPath/$name"
-        folderMarkers.add(folderPath)
         // Create a hidden marker file to persist the folder
         val marker = VaultFileMetadata(
             name = ".folder",
