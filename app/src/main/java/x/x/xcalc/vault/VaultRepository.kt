@@ -291,17 +291,7 @@ class VaultRepository(private val context: Context) {
         val newPath = if (targetParentPath.isEmpty()) folderName else "$targetParentPath/$folderName"
         if (newPath == oldPath) return false
 
-        val list = loadMetadata() as MutableList
-        for (i in list.indices) {
-            val meta = list[i]
-            when {
-                meta.relativePath == oldPath -> list[i] = meta.copy(relativePath = newPath)
-                meta.relativePath.startsWith("$oldPath/") ->
-                    list[i] = meta.copy(relativePath = meta.relativePath.replaceFirst(oldPath, newPath))
-            }
-        }
-        metadataCache = list
-        saveMetadata()
+        remapFolderPaths(oldPath, newPath)
         return true
     }
 
@@ -322,6 +312,10 @@ class VaultRepository(private val context: Context) {
         val parentPath = parts.dropLast(1).joinToString("/")
         val newPath = if (parentPath.isEmpty()) newName else "$parentPath/$newName"
 
+        remapFolderPaths(oldPath, newPath)
+    }
+
+    private fun remapFolderPaths(oldPath: String, newPath: String) {
         val list = loadMetadata() as MutableList
         for (i in list.indices) {
             val meta = list[i]
