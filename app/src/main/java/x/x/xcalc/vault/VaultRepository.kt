@@ -2,6 +2,7 @@ package x.x.xcalc.vault
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
@@ -15,6 +16,10 @@ class VaultRepository(private val context: Context) {
     private val filesDir = File(vaultDir, "files").apply { mkdirs() }
     private val metadataFile = File(vaultDir, "metadata.enc")
     private val tempDir = File(context.cacheDir, "vault_temp").apply { mkdirs() }
+
+    private companion object {
+        private const val TAG = "VaultRepository"
+    }
 
     private var metadataCache: MutableList<VaultFileMetadata>? = null
 
@@ -30,7 +35,8 @@ class VaultRepository(private val context: Context) {
             val type = object : TypeToken<List<VaultFileMetadata>>() {}.type
             val list: List<VaultFileMetadata>? = gson.fromJson(json, type)
             (list ?: emptyList()).toMutableList()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load metadata", e)
             mutableListOf()
         }
         return metadataCache!!
@@ -122,7 +128,8 @@ class VaultRepository(private val context: Context) {
                     CryptoManager.encrypt(input, output)
                 }
             } ?: return null
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to import file", e)
             encFile.delete()
             return null
         }
@@ -181,7 +188,8 @@ class VaultRepository(private val context: Context) {
                 }
             }
             tempFile
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to decrypt file ${metadata.id}", e)
             tempFile.delete()
             null
         }
@@ -323,13 +331,17 @@ class VaultRepository(private val context: Context) {
     fun deleteOriginal(uri: Uri) {
         try {
             DocumentFile.fromSingleUri(context, uri)?.delete()
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to delete original file: $uri", e)
+        }
     }
 
     fun deleteOriginalTree(uri: Uri) {
         try {
             DocumentFile.fromTreeUri(context, uri)?.delete()
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to delete original tree: $uri", e)
+        }
     }
 
     private fun getDisplayName(uri: Uri): String? {

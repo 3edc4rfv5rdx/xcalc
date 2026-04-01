@@ -2,6 +2,7 @@ package x.x.xcalc.vault
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.util.Log
 import java.io.EOFException
 import java.io.InputStream
 import java.io.OutputStream
@@ -18,6 +19,7 @@ object CryptoManager {
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
     private const val IV_SIZE = 12
     private const val TAG_SIZE = 128
+    private const val BUFFER_SIZE = 8192
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
@@ -38,19 +40,31 @@ object CryptoManager {
     }
 
     fun encrypt(input: InputStream, output: OutputStream) {
-        val plaintext = input.readBytes()
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
         output.write(cipher.iv)
-        output.write(cipher.doFinal(plaintext))
+        val buffer = ByteArray(BUFFER_SIZE)
+        var bytesRead: Int
+        while (input.read(buffer).also { bytesRead = it } != -1) {
+            val chunk = cipher.update(buffer, 0, bytesRead)
+            if (chunk != null) output.write(chunk)
+        }
+        val finalChunk = cipher.doFinal()
+        if (finalChunk != null) output.write(finalChunk)
     }
 
     fun decrypt(input: InputStream, output: OutputStream) {
         val iv = readExact(input, IV_SIZE)
-        val ciphertext = input.readBytes()
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(TAG_SIZE, iv))
-        output.write(cipher.doFinal(ciphertext))
+        val buffer = ByteArray(BUFFER_SIZE)
+        var bytesRead: Int
+        while (input.read(buffer).also { bytesRead = it } != -1) {
+            val chunk = cipher.update(buffer, 0, bytesRead)
+            if (chunk != null) output.write(chunk)
+        }
+        val finalChunk = cipher.doFinal()
+        if (finalChunk != null) output.write(finalChunk)
     }
 
     fun encryptBytes(data: ByteArray): ByteArray {
