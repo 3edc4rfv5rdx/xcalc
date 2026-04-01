@@ -9,3 +9,4 @@ fi
 
 echo ">>> Installing: $(basename "$apk")"
 adb -s emulator-5554 install -r "$apk"
+sleep 2

@@ -2,7 +2,7 @@
 
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
-## 0.3.20260401+72
+## 0.3.20260401+74
 - R Stream encryption instead of loading entire file into memory
 - E Add error logging instead of silently swallowing exceptions
 - E Add @Synchronized to VaultRepository to prevent race conditions
