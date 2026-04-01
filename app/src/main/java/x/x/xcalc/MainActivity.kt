@@ -148,7 +148,6 @@ fun CalculatorScreen() {
     if (showVault.value) {
         VaultScreen(onBack = {
             showVault.value = false
-            @Suppress("ASSIGNED_VALUE_IS_NEVER_READ")
             backspaceTapCount = 0
         })
         return
