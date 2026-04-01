@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 PROJECT="xcalc"
-APK_DIR="app/build/outputs/apk/release"
-CHANGELOG_FILE="/tmp/release_notes_$$.md"
+APK_DIR="$SCRIPT_DIR/app/build/outputs/apk/release"
+CHANGELOG_FILE="$(mktemp /tmp/xcalc-release-notes.XXXXXX.md)"
 DRY_RUN=false
 
 # ------------------------------------------------------------
@@ -41,6 +44,8 @@ fi
 
 echo "Version: $VERSION"
 echo "Build:   $BUILD"
+
+APK_PREFIX="${PROJECT}-${VERSION}+${BUILD}-release"
 
 # ------------------------------------------------------------
 # Build changelog from CHANGELOG.md
@@ -81,14 +86,18 @@ echo "--------------------------------------------------"
 # ------------------------------------------------------------
 # Find APK files
 # ------------------------------------------------------------
-APK_ARM64=$(ls -t "$APK_DIR"/*arm64-v8a*.apk 2>/dev/null | head -1)
-APK_UNIVERSAL=$(ls -t "$APK_DIR"/*universal*.apk 2>/dev/null | head -1)
+APK_ARM64="$APK_DIR/${APK_PREFIX}-arm64-v8a.apk"
+APK_UNIVERSAL="$APK_DIR/${APK_PREFIX}-universal.apk"
 
 echo "=== Checking APK files ==="
 
 for f in "$APK_ARM64" "$APK_UNIVERSAL"; do
     if [[ -z "$f" || ! -f "$f" ]]; then
-        echo "ERROR: APK not found in $APK_DIR"
+        echo "ERROR: APK not found for tag $TAG"
+        echo "Expected file: $f"
+        echo "APK directory: $APK_DIR"
+        echo "Available APKs:"
+        ls -1 "$APK_DIR"/*.apk 2>/dev/null || echo "(none)"
         exit 1
     fi
     echo "OK: $(basename "$f")"

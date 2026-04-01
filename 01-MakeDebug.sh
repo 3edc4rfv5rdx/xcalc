@@ -10,7 +10,6 @@ if [[ ! -f "$BUILD_FILE" ]]; then
 fi
 
 source "$BUILD_FILE"
-
 NEW_BUILD=$((build + 1))
 TODAY=$(date +%Y%m%d)
 NEW_VERSION="${base_version}.${TODAY}"
