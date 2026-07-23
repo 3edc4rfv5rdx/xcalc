@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Run vault metadata reads and mutations off the main thread in the file list
 - E Relock the vault when returning more than a minute after an external viewer was opened
 - E Keep VaultFileMetadata field names from R8 and migrate legacy obfuscated metadata keys so updates cannot empty the vault index
 - E Preload PinManager on the second backspace tap so the vault opens right at the 5s "=" hold

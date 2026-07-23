@@ -57,6 +57,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -136,21 +137,26 @@ fun FileListScreen(
         }
     }
 
-    fun refreshItems() {
-        val files = repository.getFilesInFolder(currentFolder)
-            .filter { it.mimeType != "inode/directory" }
-            .map { FileListItem.FileItem(it) }
-        val folders = repository.getFolders(currentFolder)
-            .map {
-                val path = if (currentFolder.isEmpty()) it else "$currentFolder/$it"
-                FileListItem.FolderItem(it, path)
-            }
+    // Metadata reads hit disk + AES on first load; keep them off the UI thread.
+    suspend fun refreshItems() {
+        val folder = currentFolder
+        val (folders, files) = withContext(Dispatchers.IO) {
+            val files = repository.getFilesInFolder(folder)
+                .filter { it.mimeType != "inode/directory" }
+                .map { FileListItem.FileItem(it) }
+            val folders = repository.getFolders(folder)
+                .map {
+                    val path = if (folder.isEmpty()) it else "$folder/$it"
+                    FileListItem.FolderItem(it, path)
+                }
+            folders to files
+        }
         items = folders + files
     }
 
-    DisposableEffect(currentFolder) {
+    // Covers both the initial load and every folder navigation.
+    LaunchedEffect(currentFolder) {
         refreshItems()
-        onDispose { }
     }
 
     // Clean temp files once we leave this screen.
@@ -270,7 +276,6 @@ fun FileListScreen(
                 val parts = currentFolder.split("/")
                 currentFolder = parts.dropLast(1).joinToString("/")
                 selected.clear()
-                refreshItems()
             }
             else -> {
                 deleteViewedTemps()
@@ -508,7 +513,6 @@ fun FileListScreen(
                                             is FileListItem.FolderItem -> {
                                                 currentFolder = item.path
                                                 selected.clear()
-                                                refreshItems()
                                             }
                                             is FileListItem.FileItem -> {
                                                 selected.add(id)
@@ -572,8 +576,12 @@ fun FileListScreen(
             placeholder = stringResource(R.string.folder_name),
             onConfirm = { name ->
                 if (name.isNotBlank()) {
-                    repository.createFolder(currentFolder, name.trim())
-                    refreshItems()
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            repository.createFolder(currentFolder, name.trim())
+                        }
+                        refreshItems()
+                    }
                 }
                 showNewFolderDialog = false
             },
@@ -594,14 +602,24 @@ fun FileListScreen(
             initialValue = currentName,
             onConfirm = { newName ->
                 if (newName.isNotBlank()) {
-                    when (val t = renameTarget) {
-                        is VaultFileMetadata -> repository.renameFile(t, newName.trim())
-                        is String -> if (!repository.renameFolder(t, newName.trim())) {
+                    val target = renameTarget
+                    scope.launch {
+                        val renamed = withContext(Dispatchers.IO) {
+                            when (target) {
+                                is VaultFileMetadata -> {
+                                    repository.renameFile(target, newName.trim())
+                                    true
+                                }
+                                is String -> repository.renameFolder(target, newName.trim())
+                                else -> true
+                            }
+                        }
+                        if (!renamed) {
                             Toast.makeText(context, context.getString(R.string.folder_exists), Toast.LENGTH_SHORT).show()
                         }
+                        refreshItems()
+                        selected.clear()
                     }
-                    refreshItems()
-                    selected.clear()
                 }
                 showRenameDialog = false
                 renameTarget = null
@@ -621,10 +639,16 @@ fun FileListScreen(
             text = { Text(stringResource(R.string.delete_items, selected.size) + "?") },
             confirmButton = {
                 Button(onClick = {
-                    repository.deleteFiles(selectedFiles())
-                    for (f in selectedFolders()) repository.deleteFolder(f.path)
-                    selected.clear()
-                    refreshItems()
+                    val files = selectedFiles()
+                    val folders = selectedFolders()
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            repository.deleteFiles(files)
+                            for (f in folders) repository.deleteFolder(f.path)
+                        }
+                        selected.clear()
+                        refreshItems()
+                    }
                     showDeleteDialog = false
                 }) { Text(stringResource(R.string.delete)) }
             },
@@ -664,19 +688,21 @@ fun FileListScreen(
             },
             confirmButton = {
                 Button(onClick = {
-                    repository.moveFiles(selectedFiles(), selectedFolder)
-                    var failedMoves = 0
-                    for (folder in selectedFolders()) {
-                        if (!repository.moveFolder(folder.path, selectedFolder)) {
-                            failedMoves++
+                    val files = selectedFiles()
+                    val folders = selectedFolders()
+                    val target = selectedFolder
+                    scope.launch {
+                        val failedMoves = withContext(Dispatchers.IO) {
+                            repository.moveFiles(files, target)
+                            folders.count { !repository.moveFolder(it.path, target) }
+                        }
+                        selected.clear()
+                        refreshItems()
+                        if (failedMoves > 0) {
+                            Toast.makeText(context, context.getString(R.string.folders_not_moved), Toast.LENGTH_SHORT).show()
                         }
                     }
-                    selected.clear()
-                    refreshItems()
                     showMoveDialog = false
-                    if (failedMoves > 0) {
-                        Toast.makeText(context, context.getString(R.string.folders_not_moved), Toast.LENGTH_SHORT).show()
-                    }
                 }) { Text(stringResource(R.string.move)) }
             },
             dismissButton = {

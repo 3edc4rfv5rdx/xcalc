@@ -14,7 +14,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## Medium — performance / logic
 
-3. **All metadata mutations and the first metadata load run on the main thread in `FileListScreen`.**
+3. **FIXED — All metadata mutations and the first metadata load run on the main thread in `FileListScreen`.**
    `refreshItems()` (first call decrypts and parses the whole index), `createFolder`, `deleteFiles` + `deleteFolder` (which also delete `.enc` files from disk), `moveFiles`, `moveFolder`, `renameFile`, `renameFolder` are all invoked directly from Compose click handlers. Each mutation re-encrypts and rewrites the entire metadata file synchronously — disk I/O + AES + JSON on the UI thread, causing jank and potential ANR on large vaults (import/export already use `Dispatchers.IO` correctly). Fix: wrap these repository calls in `scope.launch { withContext(Dispatchers.IO) { ... } }` and refresh the list afterwards, mirroring the import path.
 
 4. **Recovering from an "Error" result wipes the entire calculation history.**
