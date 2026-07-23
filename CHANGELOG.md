@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Preload PinManager on the second backspace tap so the vault opens right at the 5s "=" hold
 - R Move all hardcoded UI strings to the base English strings.xml
 - I Update NOTES.md to drop stale percent feature claims
 - R Remove unused deleteOriginal helpers, metadata computed properties and TextButton import

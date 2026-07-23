@@ -23,6 +23,19 @@ class PinManager(context: Context) {
     )
 
     companion object {
+        // Construction (keystore master key + EncryptedSharedPreferences)
+        // takes seconds on first use; getInstance caches the instance so a
+        // preload during the "=" hold makes the PIN screen appear right when
+        // the long-press fires. The visible constructor exists for tests only.
+        @Volatile
+        private var instance: PinManager? = null
+
+        fun getInstance(context: Context): PinManager {
+            return instance ?: synchronized(this) {
+                instance ?: PinManager(context.applicationContext).also { instance = it }
+            }
+        }
+
         private const val KEY_PIN_HASH = "pin_hash"
         private const val KEY_PIN_SALT = "pin_salt"
         private const val KEY_FAIL_COUNT = "fail_count"

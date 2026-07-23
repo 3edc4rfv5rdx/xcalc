@@ -22,14 +22,14 @@ fun VaultScreen(onBack: () -> Unit, onExternalView: () -> Unit) {
     val context = LocalContext.current
     val repository = remember { VaultRepository.getInstance(context) }
 
-    // PinManager construction (keystore master key + EncryptedSharedPreferences)
-    // takes seconds on first use; build it off the main thread so the vault
-    // appears immediately after the long-press gesture.
+    // PinManager is normally already warmed by the preload started on the
+    // second backspace tap (see CalculatorScreen); keep the off-main-thread
+    // fetch as a fallback so a cold start never blocks the UI.
     var pinManager by remember { mutableStateOf<PinManager?>(null) }
     var state by remember { mutableStateOf<VaultState?>(null) }
 
     LaunchedEffect(Unit) {
-        val pm = withContext(Dispatchers.IO) { PinManager(context) }
+        val pm = withContext(Dispatchers.IO) { PinManager.getInstance(context) }
         pinManager = pm
         state = if (pm.hasPin) VaultState.PIN_UNLOCK else VaultState.PIN_SETUP
         // Sweep decrypted temp files left over from a previous process

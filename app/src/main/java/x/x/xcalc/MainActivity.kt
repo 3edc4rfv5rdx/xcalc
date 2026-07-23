@@ -61,7 +61,9 @@ import x.x.xcalc.ui.theme.DigitButtonContent
 import x.x.xcalc.ui.theme.OperatorButton
 import x.x.xcalc.ui.theme.OperatorButtonContent
 import x.x.xcalc.ui.theme.XcalcTheme
+import x.x.xcalc.vault.PinManager
 import x.x.xcalc.vault.VaultScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -88,6 +90,8 @@ private data class CalcButton(
 
 @Composable
 fun CalculatorScreen() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val engine = remember { CalculatorEngine() }
     val showVault = remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
@@ -224,6 +228,14 @@ fun CalculatorScreen() {
                         val onPress: () -> Unit = {
                             if (button.icon != null) {
                                 backspaceTapCount = (backspaceTapCount + 1).coerceAtMost(2)
+                                if (backspaceTapCount == 2) {
+                                    // Warm the slow PinManager init during the
+                                    // upcoming "=" hold so the PIN screen shows
+                                    // right when the long-press fires.
+                                    scope.launch(Dispatchers.IO) {
+                                        PinManager.getInstance(context)
+                                    }
+                                }
                             } else if (button.label != "backspace") {
                                 backspaceTapCount = 0
                             }
