@@ -38,7 +38,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 10. **FIXED — Long calculation results overflow the display.**
     The main value `Text` in `DisplayArea` (MainActivity.kt) has no `maxLines`, auto-sizing, or horizontal scrolling; a result like `999999999999999 × 999999999999999` (~30 digits, and division can produce even longer strings) wraps onto multiple lines and squeezes the history area. Fix: use a single-line auto-shrinking text (e.g. `maxLines = 1` with `TextOverflow`-aware font scaling, or `basicMarquee`/horizontal scroll) for the current value.
 
-11. **Gson can materialize `VaultFileMetadata` with nulls in non-null Kotlin fields.**
+11. **FIXED — Gson can materialize `VaultFileMetadata` with nulls in non-null Kotlin fields.**
     `VaultRepository.mutableMetadata()` parses metadata with reflective Gson, which bypasses Kotlin null-safety and constructor defaults: a JSON entry missing `id`/`name`/`relativePath` (schema evolution in a future version, or a partially corrupted file) yields nulls in non-null fields and crashes far from the cause (e.g. in `fullPath` or filtering). Fix: after `fromJson`, validate each entry (drop or repair entries with null/blank `id` or `name`, null `relativePath` → ""), or add a post-parse mapping to a validated copy.
 
 12. **Dead code accumulating again.**

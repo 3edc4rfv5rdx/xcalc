@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Validate vault metadata entries after JSON parse to survive missing fields
 - F Shrink long calculator results to fit on one display line
 - N Export selected folders recursively instead of silently skipping them
 - E Treat moving a folder to its current parent as a no-op instead of a failure

@@ -55,7 +55,7 @@ class VaultRepository(private val context: Context) {
             val json = String(CryptoManager.decryptBytes(encrypted))
             val type = object : TypeToken<List<VaultFileMetadata>>() {}.type
             val list: List<VaultFileMetadata>? = gson.fromJson(json, type)
-            (list ?: emptyList()).toMutableList()
+            sanitizeLoaded(list ?: emptyList())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load metadata", e)
             // Preserve the unreadable file so a later save cannot destroy
@@ -65,6 +65,29 @@ class VaultRepository(private val context: Context) {
             mutableListOf()
         }
         return metadataCache!!
+    }
+
+    // Reflective Gson bypasses Kotlin null-safety: JSON entries missing keys
+    // (schema drift, partial corruption) yield nulls in non-null fields and
+    // crash far from the cause. Drop unrecoverable entries, repair the rest.
+    @Suppress("SENSELESS_COMPARISON", "USELESS_ELVIS")
+    private fun sanitizeLoaded(list: List<VaultFileMetadata?>): MutableList<VaultFileMetadata> {
+        val result = mutableListOf<VaultFileMetadata>()
+        for (meta in list) {
+            // Without an id the encrypted file is unreachable — skip.
+            if (meta == null || meta.id == null) continue
+            result.add(
+                VaultFileMetadata(
+                    id = meta.id,
+                    name = meta.name ?: "unknown",
+                    relativePath = meta.relativePath ?: "",
+                    mimeType = meta.mimeType ?: "application/octet-stream",
+                    size = meta.size,
+                    dateAdded = meta.dateAdded
+                )
+            )
+        }
+        return result
     }
 
     @Synchronized
