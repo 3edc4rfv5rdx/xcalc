@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- F Cap calculator history at 100 entries and input at 15 digits
 - E Keep calculator and vault state across rotation and theme changes
 - E Handle system back in vault screens instead of closing the app
 - E Persist viewed temp files on IO thread instead of blocking UI

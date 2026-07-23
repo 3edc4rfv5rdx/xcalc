@@ -4,6 +4,11 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 class CalculatorEngine {
+    private companion object {
+        const val MAX_INPUT_DIGITS = 15
+        const val MAX_HISTORY = 100
+    }
+
     var currentInput: String = "0"
         private set
     var storedValue: BigDecimal? = null
@@ -75,6 +80,7 @@ class CalculatorEngine {
         }
         val resultText = result?.let(::formatNumber) ?: "Error"
         _history.add("${formatNumber(left)} $op ${formatNumber(right)} = $resultText")
+        if (_history.size > MAX_HISTORY) _history.removeAt(0)
         currentInput = resultText
         lastOp = op
         lastRight = right
@@ -136,7 +142,7 @@ class CalculatorEngine {
                     currentInput = label
                 } else if (currentInput == "-0") {
                     currentInput = "-$label"
-                } else {
+                } else if (currentInput.count { it.isDigit() } < MAX_INPUT_DIGITS) {
                     currentInput += label
                 }
                 resetInput = false

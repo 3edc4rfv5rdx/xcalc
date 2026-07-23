@@ -64,7 +64,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## Low — cleanup / robustness
 
-19. **Unbounded growth: calculator history and PIN-less input length.**
+19. **FIXED — Unbounded growth: calculator history and PIN-less input length.**
     `CalculatorEngine._history` grows without limit, and there is no cap on `currentInput` length (digits can be typed until the display overflows and BigDecimal ops get huge). Fix: cap history (e.g., last 100 entries) and limit input length (e.g., 15 significant digits).
 
 20. **Dead code in `VaultRepository` and `CalculatorEngine`.**
