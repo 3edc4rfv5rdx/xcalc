@@ -21,6 +21,10 @@ object CryptoManager {
     private const val TAG_SIZE = 128
     private const val BUFFER_SIZE = 8192
 
+    // Synchronized so concurrent first use cannot generate the key twice —
+    // the second generateKey() would replace the first and orphan anything
+    // already encrypted with it.
+    @Synchronized
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         keyStore.getEntry(KEYSTORE_ALIAS, null)?.let {

@@ -28,7 +28,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 6. **FIXED — Empty folders are skipped on export.**
    `exportFolderToTree` and `exportAllToTree` filter out `inode/directory` marker entries and only create directories on the path of exported files, so folders that contain no files (or whose subtree is empty) are silently absent from the exported tree. Fix: for marker entries under the exported scope, call `ensureDocumentPath` for their `relativePath` even though there is no file to write, so the exported structure matches the vault.
 
-7. **`CryptoManager.getOrCreateKey()` is not synchronized — concurrent first use could generate the key twice.**
+7. **FIXED — `CryptoManager.getOrCreateKey()` is not synchronized — concurrent first use could generate the key twice.**
    Two threads hitting the keystore before the alias exists would each call `generateKey()`; the second generation replaces the first key, making anything encrypted moments earlier with the first key permanently undecryptable. Today the call sites are effectively serialized (repository methods are `@Synchronized`), so this is latent, but it is one `@Synchronized` away from safe. Fix: make `getOrCreateKey` (or the whole object's key access) synchronized.
 
 8. **Orphaned `.enc` blobs are never cleaned up.**
