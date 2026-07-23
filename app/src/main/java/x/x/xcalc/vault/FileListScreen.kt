@@ -191,11 +191,17 @@ fun FileListScreen(
     ) { uri ->
         if (uri != null) {
             scope.launch {
-                val imported = withContext(Dispatchers.IO) {
+                val (importedCount, totalCount) = withContext(Dispatchers.IO) {
                     repository.importFolder(uri, currentFolder)
                 }
                 refreshItems()
-                Toast.makeText(context, context.getString(R.string.imported_files, imported.size), Toast.LENGTH_SHORT).show()
+                val failedCount = totalCount - importedCount
+                val message = if (failedCount == 0) {
+                    context.getString(R.string.imported_files, importedCount)
+                } else {
+                    context.getString(R.string.imported_failed, importedCount, failedCount)
+                }
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
         }
     }

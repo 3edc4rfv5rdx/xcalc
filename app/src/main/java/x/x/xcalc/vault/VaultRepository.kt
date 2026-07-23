@@ -267,22 +267,26 @@ class VaultRepository(private val context: Context) {
         }
     }
 
-    fun importFolder(treeUri: Uri, targetFolder: String): List<VaultFileMetadata> {
-        val docFile = DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
+    // Returns imported file count and total file count attempted, so the
+    // caller can surface failures instead of silently dropping them.
+    fun importFolder(treeUri: Uri, targetFolder: String): Pair<Int, Int> {
+        val docFile = DocumentFile.fromTreeUri(context, treeUri) ?: return 0 to 0
         // Sanitize once so the marker and the file paths always match.
         val folderName = sanitizeName(docFile.name ?: "imported").ifEmpty { "imported" }
         val subFolder = if (targetFolder.isEmpty()) folderName else "$targetFolder/$folderName"
         createFolder(targetFolder, folderName)
         val imported = mutableListOf<VaultFileMetadata>()
-        importDocumentRecursive(docFile, subFolder, imported)
-        return imported
+        val total = importDocumentRecursive(docFile, subFolder, imported)
+        return imported.size to total
     }
 
+    // Returns the number of files attempted under doc.
     private fun importDocumentRecursive(
         doc: DocumentFile,
         currentFolder: String,
         result: MutableList<VaultFileMetadata>
-    ) {
+    ): Int {
+        var attempted = 0
         for (child in doc.listFiles()) {
             if (child.isDirectory) {
                 // Skip directories whose name sanitizes to nothing instead of crashing.
@@ -290,13 +294,13 @@ class VaultRepository(private val context: Context) {
                 if (folderName.isEmpty()) continue
                 val subFolder = if (currentFolder.isEmpty()) folderName else "$currentFolder/$folderName"
                 createFolder(currentFolder, folderName)
-                importDocumentRecursive(child, subFolder, result)
+                attempted += importDocumentRecursive(child, subFolder, result)
             } else {
-                child.uri.let { uri ->
-                    importFile(uri, currentFolder)?.let { result.add(it) }
-                }
+                attempted++
+                importFile(child.uri, currentFolder)?.let { result.add(it) }
             }
         }
+        return attempted
     }
 
     fun decryptToTemp(metadata: VaultFileMetadata): File? {

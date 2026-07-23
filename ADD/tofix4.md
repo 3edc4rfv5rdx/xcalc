@@ -20,7 +20,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 4. **FIXED — `uniqueDocumentFile` gives extension-less files a trailing dot on name collision (`"foo (1)."`).**
    In `VaultRepository.uniqueDocumentFile()`, `ext` is computed as `name.substringAfterLast('.', "").let { if (it == name) "" else ".$it" }`. `substringAfterLast('.', "")` returns `""` (not `name`) when there is no dot, so the `it == name` guard is dead code and `ext` becomes `"."` — exporting a duplicate of an extension-less file creates `"foo (1)."` instead of `"foo (1)"`. Fix: change the guard to `if (it.isEmpty()) "" else ".$it"`. Optionally also handle dot-leading names (`.bashrc` currently yields base name `""` → `" (1).bashrc"`), e.g. treat a name whose only dot is at index 0 as having no extension.
 
-5. **Folder import reports only the success count — files that failed to import inside the tree are silently ignored.**
+5. **FIXED — Folder import reports only the success count — files that failed to import inside the tree are silently ignored.**
    `FileListScreen`'s `folderPickerLauncher` callback always shows `R.string.imported_files` with `imported.size`; `importDocumentRecursive` drops `importFile` nulls without counting them, so a tree where some files failed (unreadable URI, encryption error) looks fully imported. The plain multi-file import already distinguishes (`imported_failed`). Fix: make `importFolder`/`importDocumentRecursive` return attempted and succeeded counts (or collect failures), and reuse the existing `imported_failed` string in the toast when `failed > 0`.
 
 6. **Corrupt-index backups accumulate unboundedly, and a failing backup copy crashes the caller.**
