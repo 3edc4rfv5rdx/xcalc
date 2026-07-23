@@ -34,8 +34,8 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 8. **FIXED — Orphaned `.enc` blobs are never cleaned up.**
    `importFile` writes `${id}.enc` and only then updates metadata; a crash or process kill between the two leaves an encrypted blob that no metadata entry references — invisible in the UI and kept forever (wasted space, "ghost" content on disk). Fix: on vault open (e.g. after successful metadata load in `VaultScreen`), list `files/` and delete `.enc` files whose id is not present in metadata. Guard carefully: run the sweep only when metadata loaded successfully and non-defensively (never after a load failure or when the index came back empty due to an error), otherwise a transient load problem would delete all real data.
 
-9. **`androidx.security:security-crypto` is deprecated and pinned to an alpha.**
+9. **ACCEPTED (user decision: keep as is) — `androidx.security:security-crypto` is deprecated and pinned to an alpha.**
    The project depends on `security-crypto 1.1.0-alpha06`; Jetpack has deprecated the library (EncryptedSharedPreferences/MasterKey get no further development). It still works, but it is unmaintained alpha code sitting in the PIN path. Decide: either accept and pin knowingly, or replace `PinManager`'s storage with plain SharedPreferences holding values encrypted via the existing `CryptoManager` keystore key (the stored PIN hash is already PBKDF2 with salt; the extra encryption layer mainly hides the salt/fail-count). Low urgency, no user-visible impact today.
 
-10. **Unused `jsr305` dependency.**
+10. **NOT A BUG — Unused `jsr305` dependency.** Verified: added intentionally by commit 09023ba to satisfy R8 missing `javax.annotation.*` references when minification was enabled; removing it would break the release build.
     `app/build.gradle.kts` declares `implementation("com.google.code.findbugs:jsr305:3.0.2")`, but no source file imports `javax.annotation`. If it was added to silence a transitive annotation warning, note that; otherwise remove the dependency.

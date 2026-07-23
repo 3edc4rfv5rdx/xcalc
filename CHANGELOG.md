@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- I Resolve tofix3 audit leftovers: keep security-crypto as accepted, jsr305 confirmed needed for R8
 - E Sweep orphaned encrypted blobs on vault open after a clean index load
 - E Synchronize keystore key creation so concurrent first use cannot generate it twice
 - E Recreate empty folders when exporting a folder or the whole vault
