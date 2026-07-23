@@ -655,7 +655,7 @@ fun FileListScreen(
                     scope.launch {
                         withContext(Dispatchers.IO) {
                             repository.deleteFiles(files)
-                            for (f in folders) repository.deleteFolder(f.path)
+                            repository.deleteFolders(folders.map { it.path })
                         }
                         selected.clear()
                         refreshItems()

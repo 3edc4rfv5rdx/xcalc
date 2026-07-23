@@ -425,11 +425,17 @@ class VaultRepository(private val context: Context) {
         saveMetadata()
     }
 
+    fun deleteFolder(folderPath: String) = deleteFolders(listOf(folderPath))
+
+    // Batched so deleting N folders costs one index save, not N.
     @Synchronized
-    fun deleteFolder(folderPath: String) {
+    fun deleteFolders(folderPaths: List<String>) {
+        if (folderPaths.isEmpty()) return
         val list = mutableMetadata()
-        val toDelete = list.filter {
-            it.relativePath == folderPath || it.relativePath.startsWith("$folderPath/")
+        val toDelete = list.filter { meta ->
+            folderPaths.any {
+                meta.relativePath == it || meta.relativePath.startsWith("$it/")
+            }
         }
         for (meta in toDelete) {
             if (meta.mimeType != "inode/directory") {

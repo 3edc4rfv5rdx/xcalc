@@ -29,7 +29,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 7. **FIXED — PIN fail counting uses `apply()` — force-killing the app right after a wrong attempt can lose the increment.**
    `PinManager.registerFailedAttempt()` persists `fail_count`/`cooldown_until` with `prefs.edit().apply()`, which writes to disk asynchronously. An attacker can try 2 PINs, swipe the app away before the async write lands, and repeat — the 3-attempts/30s cooldown never engages. The write is tiny and happens at most once per attempt, so synchronous cost is negligible. Fix: use `commit()` (on a background-safe path — the call already happens from a coroutine; move it inside `Dispatchers.IO` if needed) for `registerFailedAttempt` and the cooldown write; `clearFailures` may keep `apply()`.
 
-8. **Deleting a selection with several folders rewrites the encrypted index once per folder.**
+8. **FIXED — Deleting a selection with several folders rewrites the encrypted index once per folder.**
    The delete dialog in `FileListScreen` calls `repository.deleteFiles(files)` (one batched save) but then loops `for (f in folders) repository.deleteFolder(f.path)` — each `deleteFolder` call re-encrypts, fsyncs and renames the whole metadata file, so deleting N sibling folders costs N full index writes plus one for the files. Fix: add a batched `deleteFolders(paths: List<String>)` (or extend `deleteFiles` into a combined `deleteItems`) in `VaultRepository` that removes all matching entries and their `.enc` blobs, then saves metadata once; keep single-folder `deleteFolder` delegating to it.
 
 ## Tests
