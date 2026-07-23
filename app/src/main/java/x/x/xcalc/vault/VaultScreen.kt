@@ -18,7 +18,7 @@ import kotlinx.coroutines.withContext
 enum class VaultState { PIN_SETUP, PIN_UNLOCK, FILE_LIST }
 
 @Composable
-fun VaultScreen(onBack: () -> Unit, onExternalView: () -> Unit) {
+fun VaultScreen(onBack: () -> Unit, onExternalActivity: () -> Unit) {
     val context = LocalContext.current
     val repository = remember { VaultRepository.getInstance(context) }
 
@@ -88,7 +88,7 @@ fun VaultScreen(onBack: () -> Unit, onExternalView: () -> Unit) {
             FileListScreen(
                 repository = repository,
                 onBack = onBack,
-                onExternalView = onExternalView
+                onExternalActivity = onExternalActivity
             )
         }
     }

@@ -100,7 +100,7 @@ sealed class FileListItem {
 fun FileListScreen(
     repository: VaultRepository,
     onBack: () -> Unit,
-    onExternalView: () -> Unit
+    onExternalActivity: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -326,7 +326,7 @@ fun FileListScreen(
                                             context.startActivity(viewIntent)
                                             // The viewer covers us and fires ON_STOP;
                                             // exempt that one stop from vault relock.
-                                            onExternalView()
+                                            onExternalActivity()
                                         } catch (e: Exception) {
                                             Toast.makeText(context, context.getString(R.string.no_app_to_open), Toast.LENGTH_SHORT).show()
                                         }
@@ -433,6 +433,9 @@ fun FileListScreen(
                             ),
                             onClick = {
                                 showFabMenu = false
+                                // The picker covers us and fires ON_STOP;
+                                // exempt that one stop from vault relock.
+                                onExternalActivity()
                                 filePickerLauncher.launch(arrayOf("*/*"))
                             }
                         )
@@ -446,6 +449,8 @@ fun FileListScreen(
                             ),
                             onClick = {
                                 showFabMenu = false
+                                // Exempt the picker's ON_STOP from vault relock.
+                                onExternalActivity()
                                 folderPickerLauncher.launch(null)
                             }
                         )
@@ -721,6 +726,8 @@ fun FileListScreen(
                 Button(onClick = {
                     showExportDialog = false
                     pendingExportMode = ExportMode.SELECTED
+                    // Exempt the picker's ON_STOP from vault relock.
+                    onExternalActivity()
                     exportFolderLauncher.launch(null)
                 }) { Text(stringResource(R.string.export)) }
             },
@@ -740,6 +747,8 @@ fun FileListScreen(
                 Button(onClick = {
                     showExportAllDialog = false
                     pendingExportMode = ExportMode.ALL
+                    // Exempt the picker's ON_STOP from vault relock.
+                    onExternalActivity()
                     exportFolderLauncher.launch(null)
                 }) { Text(stringResource(R.string.export)) }
             },
