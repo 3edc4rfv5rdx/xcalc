@@ -18,7 +18,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## High — security / plaintext leakage
 
-5. **Decrypted temp files can persist in cache indefinitely; `clearTemp()` is never called.**
+5. **Decrypted temp files can persist in cache indefinitely; `clearTemp()` is never called. — FIXED**
    `VaultRepository.decryptToTemp()` writes plaintext into `cacheDir/vault_temp`. Cleanup relies solely on `persistViewedTemps()` running in `FileListScreen`'s `onDispose`. If the process is killed while an external viewer is open (common, since viewing launches another app), plaintext survives across restarts. `VaultRepository.clearTemp()` exists but has zero call sites. Fix: call `clearTemp()` when the vault opens (e.g., in `VaultScreen` init or on PIN unlock) to sweep leftovers from previous sessions.
 
 6. **Failed export leaves a partial plaintext file in the destination.**

@@ -1,11 +1,14 @@
 package x.x.xcalc.vault
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 enum class VaultState { PIN_SETUP, PIN_UNLOCK, FILE_LIST }
 
@@ -19,6 +22,14 @@ fun VaultScreen(onBack: () -> Unit) {
         mutableStateOf(
             if (pinManager.hasPin) VaultState.PIN_UNLOCK else VaultState.PIN_SETUP
         )
+    }
+
+    // Sweep decrypted temp files left over from a previous session
+    // (e.g. the process was killed while an external viewer was open).
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            repository.clearTemp()
+        }
     }
 
     when (state) {

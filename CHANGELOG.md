@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Sweep leftover decrypted temp files when opening the vault
 - E Return metadata copy to prevent concurrent modification crashes
 - E Re-encrypt edited vault files to a temp file to protect the original
 - E Back up unreadable vault metadata before overwriting with empty index
