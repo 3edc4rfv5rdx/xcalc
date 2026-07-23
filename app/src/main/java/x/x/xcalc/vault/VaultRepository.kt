@@ -6,6 +6,9 @@ import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.io.FilterInputStream
@@ -53,8 +56,9 @@ class VaultRepository(private val context: Context) {
         metadataCache = try {
             val encrypted = metadataFile.readBytes()
             val json = String(CryptoManager.decryptBytes(encrypted))
+            val migrated = remapLegacyKeys(json) ?: json
             val type = object : TypeToken<List<VaultFileMetadata>>() {}.type
-            val list: List<VaultFileMetadata>? = gson.fromJson(json, type)
+            val list: List<VaultFileMetadata>? = gson.fromJson(migrated, type)
             sanitizeLoaded(list ?: emptyList())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load metadata", e)
@@ -65,6 +69,35 @@ class VaultRepository(private val context: Context) {
             mutableListOf()
         }
         return metadataCache!!
+    }
+
+    // Release builds shipped before the VaultFileMetadata proguard keep rule
+    // wrote the index with R8-obfuscated field names (see that build's
+    // mapping.txt: id->a, name->b, ...). Translate those keys to the real
+    // field names once on load; returns null when the JSON is not legacy.
+    private fun remapLegacyKeys(json: String): String? {
+        return try {
+            val array = JsonParser.parseString(json).asJsonArray
+            if (array.isEmpty) return null
+            val legacyToField = mapOf(
+                "a" to "id", "b" to "name", "c" to "relativePath",
+                "d" to "mimeType", "e" to "size", "f" to "dateAdded"
+            )
+            val result = JsonArray()
+            for (element in array) {
+                val obj = element.asJsonObject
+                // Strictly legacy entries only: obfuscated id present, real id absent.
+                if (!obj.has("a") || obj.has("id")) return null
+                val mapped = JsonObject()
+                for ((key, value) in obj.entrySet()) {
+                    mapped.add(legacyToField[key] ?: key, value)
+                }
+                result.add(mapped)
+            }
+            result.toString()
+        } catch (e: Exception) {
+            null
+        }
     }
 
     // Reflective Gson bypasses Kotlin null-safety: JSON entries missing keys

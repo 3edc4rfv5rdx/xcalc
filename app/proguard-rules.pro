@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# Gson serializes VaultFileMetadata into the encrypted vault index
+# reflectively; keep the field names stable so the stored JSON keys
+# survive R8 mapping changes between releases.
+-keepclassmembers class x.x.xcalc.vault.VaultFileMetadata { <fields>; }
