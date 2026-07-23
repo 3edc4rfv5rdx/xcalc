@@ -2,7 +2,6 @@ package x.x.xcalc.vault
 
 import android.content.ClipData
 import android.content.Intent
-import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -85,31 +84,12 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.zip.CRC32
 
 private enum class ExportMode { SELECTED, ALL }
 
 sealed class FileListItem {
     data class FolderItem(val name: String, val path: String) : FileListItem()
     data class FileItem(val metadata: VaultFileMetadata) : FileListItem()
-}
-
-private data class ViewedTemp(
-    val metadata: VaultFileMetadata,
-    val tempFile: File,
-    val initialCrc: Long
-)
-
-private fun fileCrc32(file: File): Long {
-    val crc = CRC32()
-    file.inputStream().use { input ->
-        val buffer = ByteArray(8192)
-        var bytesRead: Int
-        while (input.read(buffer).also { bytesRead = it } != -1) {
-            crc.update(buffer, 0, bytesRead)
-        }
-    }
-    return crc.value
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -136,32 +116,21 @@ fun FileListScreen(
     var pendingExportMode by remember { mutableStateOf<ExportMode?>(null) }
     var renameTarget by remember { mutableStateOf<Any?>(null) } // VaultFileMetadata or String (folder path)
 
-    // Temp file tracking for view action
-    val viewedTemps = remember { mutableStateListOf<ViewedTemp>() }
+    // Decrypted temp files handed to external viewers; deleted on teardown.
+    val viewedTemps = remember { mutableStateListOf<File>() }
     val menuContainerColor = VaultAccent
     val menuContentColor = VaultAccentContent
 
-    // Runs on IO in a scope that survives leaving this screen: persisting
+    // Runs on IO in a scope that survives leaving this screen: cleanup
     // happens during teardown and must not block the UI thread.
-    val persistScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+    val cleanupScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
 
-    fun persistViewedTemps() {
-        val toPersist = viewedTemps.toList()
+    fun deleteViewedTemps() {
+        val toDelete = viewedTemps.toList()
         viewedTemps.clear()
-        if (toPersist.isEmpty()) return
-        persistScope.launch {
-            toPersist.forEach { viewed ->
-                try {
-                    if (!viewed.tempFile.exists()) return@forEach
-                    val newCrc = fileCrc32(viewed.tempFile)
-                    if (newCrc != viewed.initialCrc) {
-                        repository.reEncryptFromTemp(viewed.metadata, viewed.tempFile)
-                    }
-                    viewed.tempFile.delete()
-                } catch (e: Exception) {
-                    Log.e("FileListScreen", "Failed to persist ${viewed.metadata.id}", e)
-                }
-            }
+        if (toDelete.isEmpty()) return
+        cleanupScope.launch {
+            toDelete.forEach { it.delete() }
         }
     }
 
@@ -182,10 +151,10 @@ fun FileListScreen(
         onDispose { }
     }
 
-    // Persist edits and clean temp files once we leave this screen.
+    // Clean temp files once we leave this screen.
     DisposableEffect(Unit) {
         onDispose {
-            persistViewedTemps()
+            deleteViewedTemps()
         }
     }
 
@@ -294,7 +263,7 @@ fun FileListScreen(
                 refreshItems()
             }
             else -> {
-                persistViewedTemps()
+                deleteViewedTemps()
                 onBack()
             }
         }
@@ -324,13 +293,7 @@ fun FileListScreen(
                                         repository.decryptToTemp(meta)
                                     }
                                     if (tempFile != null) {
-                                        viewedTemps.add(
-                                            ViewedTemp(
-                                                metadata = meta,
-                                                tempFile = tempFile,
-                                                initialCrc = fileCrc32(tempFile)
-                                            )
-                                        )
+                                        viewedTemps.add(tempFile)
                                         val uri = FileProvider.getUriForFile(
                                             context,
                                             "${context.packageName}.fileprovider",

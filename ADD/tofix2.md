@@ -15,16 +15,16 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## Medium — logic bugs
 
-4. **The external-edit persist path can never trigger: view intent grants read-only access.**
+4. **FIXED (decision: view-only; edit path removed) — The external-edit persist path can never trigger: view intent grants read-only access.**
    `FileListScreen`'s view action builds `Intent(ACTION_VIEW)` with only `FLAG_GRANT_READ_URI_PERMISSION`, so no external app can modify the temp file. Yet the code computes an initial CRC32, tracks `ViewedTemp`, and calls `reEncryptFromTemp` when the CRC changes — a re-encrypt pipeline for edits that are impossible. Decide the intent: if editing externally should work, add `FLAG_GRANT_WRITE_URI_PERMISSION` to the intent and ClipData grant; if the vault is deliberately view-only, remove the CRC tracking and `reEncryptFromTemp` path as dead code.
 
-5. **CRC32 of the decrypted file is computed on the main thread when viewing.**
+5. **FIXED (obsolete — CRC tracking removed with item 4) — CRC32 of the decrypted file is computed on the main thread when viewing.**
    In `FileListScreen`'s view action, `repository.decryptToTemp(meta)` runs under `withContext(Dispatchers.IO)`, but the subsequent `initialCrc = fileCrc32(tempFile)` runs in the main-thread part of the coroutine. For a large file (video) this reads the entire file on the UI thread — frozen UI / ANR. Fix: compute the CRC inside the same `Dispatchers.IO` block that decrypts (return the pair from `withContext`).
 
 6. **PBKDF2 (100 000 iterations) runs on the main thread during PIN verify/setup.**
    `PinManager.verifyPin()`/`setupPin()` are called synchronously from `PinScreen` button callbacks (`onPinComplete` in `VaultScreen`). PBKDF2WithHmacSHA256 at 100k iterations takes hundreds of milliseconds on slower devices — visible freeze on every PIN submit. `PinManager` construction (MasterKey + EncryptedSharedPreferences, keystore + disk I/O) also happens during first composition. Fix: run hashing/verification on `Dispatchers.Default`/`IO` (make the PIN completion flow async with a small loading state), and lazily initialize the prefs off the main thread.
 
-7. **`reEncryptFromTemp` resurrects a deleted file as an orphan ciphertext blob.**
+7. **FIXED (obsolete — reEncryptFromTemp removed with item 4) — `reEncryptFromTemp` resurrects a deleted file as an orphan ciphertext blob.**
    In `VaultRepository.reEncryptFromTemp()`, the new ciphertext is written and `replaceFile` recreates `${id}.enc` *before* checking that the metadata entry still exists. If the user views a file, edits it, then deletes it in the vault before the persist job runs, the deleted file's `.enc` is recreated on disk but is absent from metadata — an orphan that is never listed and never cleaned up (wasted space, and "deleted" content silently kept on disk). Fix: check `list.indexOfFirst { it.id == metadata.id }` first and skip re-encryption (just delete the temp) when the entry is gone.
 
 ## Low — cleanup / robustness

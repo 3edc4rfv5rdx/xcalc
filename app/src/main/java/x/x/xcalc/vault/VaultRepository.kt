@@ -247,35 +247,6 @@ class VaultRepository(private val context: Context) {
         }
     }
 
-    @Synchronized
-    fun reEncryptFromTemp(metadata: VaultFileMetadata, tempFile: File) {
-        val encFile = File(filesDir, "${metadata.id}.enc")
-        // Encrypt to a temp file first so a failure cannot destroy the
-        // original ciphertext.
-        val tmpEnc = File(filesDir, "${metadata.id}.enc.tmp")
-        val originalSize: Long
-        try {
-            tempFile.inputStream().use { input ->
-                val counting = CountingInputStream(input)
-                tmpEnc.outputStream().use { output ->
-                    CryptoManager.encrypt(counting, output)
-                }
-                originalSize = counting.bytesRead
-            }
-        } catch (e: Exception) {
-            tmpEnc.delete()
-            throw e
-        }
-        replaceFile(tmpEnc, encFile)
-        val list = mutableMetadata()
-        val idx = list.indexOfFirst { it.id == metadata.id }
-        if (idx >= 0) {
-            list[idx] = list[idx].copy(size = originalSize, dateAdded = System.currentTimeMillis())
-            metadataCache = list
-            saveMetadata()
-        }
-    }
-
     fun exportFileToTree(metadata: VaultFileMetadata, destDir: DocumentFile): Boolean {
         val encFile = File(filesDir, "${metadata.id}.enc")
         if (!encFile.exists() || !destDir.isDirectory) return false
@@ -420,8 +391,8 @@ class VaultRepository(private val context: Context) {
 
     // Sweep temp files left over from a previous process (killed while an
     // external viewer was open). Runs once per process: sweeping on every
-    // vault entry would race the async persist of freshly edited temp files
-    // and could silently discard the user's edits.
+    // vault entry could delete a temp file an external viewer opened in
+    // this session is still reading.
     @Synchronized
     fun sweepTempOnce() {
         if (tempSweepDone) return
