@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -136,16 +137,16 @@ fun CalculatorScreen() {
     if (showAbout) {
         AlertDialog(
             onDismissRequest = { showAbout = false },
-            title = { Text("xcalc") },
+            title = { Text(stringResource(R.string.app_name)) },
             text = {
                 Text(
-                    "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    "${stringResource(R.string.version)} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                     fontSize = 22.sp
                 )
             },
             confirmButton = {
                 Button(onClick = { showAbout = false }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
@@ -395,7 +396,7 @@ private fun CalcButtonView(
             if (button.icon != null) {
                 Icon(
                     imageVector = button.icon,
-                    contentDescription = button.label
+                    contentDescription = stringResource(R.string.backspace)
                 )
             } else {
                 Text(

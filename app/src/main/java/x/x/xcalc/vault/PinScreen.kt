@@ -37,10 +37,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import x.x.xcalc.R
 import x.x.xcalc.ui.theme.DigitButton
 import x.x.xcalc.ui.theme.DigitButtonContent
 import kotlinx.coroutines.delay
@@ -55,6 +58,7 @@ fun PinScreen(
     onPinComplete: suspend (String) -> Boolean,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pin by remember { mutableStateOf("") }
     var firstPin by remember { mutableStateOf("") }
@@ -80,9 +84,9 @@ fun PinScreen(
     BackHandler { onBack() }
 
     val title = when (mode) {
-        PinMode.SETUP -> "Set PIN"
-        PinMode.CONFIRM -> "Confirm PIN"
-        PinMode.UNLOCK -> "Enter PIN"
+        PinMode.SETUP -> stringResource(R.string.pin_set)
+        PinMode.CONFIRM -> stringResource(R.string.pin_confirm)
+        PinMode.UNLOCK -> stringResource(R.string.pin_enter)
     }
 
     fun onDigit(digit: String) {
@@ -96,7 +100,7 @@ fun PinScreen(
     fun onSubmit() {
         if (cooldownRemaining > 0 || busy) return
         if (pin.length < 4) {
-            error = "Min 4 digits"
+            error = context.getString(R.string.pin_min_digits)
             return
         }
         when (mode) {
@@ -110,13 +114,13 @@ fun PinScreen(
                     scope.launch {
                         busy = true
                         if (!onPinComplete(pin)) {
-                            error = "Error"
+                            error = context.getString(R.string.pin_error)
                             pin = ""
                         }
                         busy = false
                     }
                 } else {
-                    error = "PIN mismatch"
+                    error = context.getString(R.string.pin_mismatch)
                     pin = ""
                     mode = PinMode.SETUP
                     firstPin = ""
@@ -129,7 +133,7 @@ fun PinScreen(
                         pinManager.registerFailedAttempt()
                         pin = ""
                         cooldownUntil = pinManager.cooldownUntil
-                        error = if (System.currentTimeMillis() < cooldownUntil) "" else "Wrong PIN"
+                        error = if (System.currentTimeMillis() < cooldownUntil) "" else context.getString(R.string.pin_wrong)
                     }
                     busy = false
                 }
@@ -158,7 +162,7 @@ fun PinScreen(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.back),
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
@@ -208,7 +212,7 @@ fun PinScreen(
 
             if (cooldownRemaining > 0) {
                 Text(
-                    text = "Wait ${cooldownRemaining}s",
+                    text = stringResource(R.string.pin_wait, cooldownRemaining),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -284,7 +288,7 @@ private fun PinButton(
             if (label == "⌫") {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
-                    contentDescription = "Backspace"
+                    contentDescription = stringResource(R.string.backspace)
                 )
             } else {
                 Text(

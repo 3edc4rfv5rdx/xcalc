@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- R Move all hardcoded UI strings to the base English strings.xml
 - I Update NOTES.md to drop stale percent feature claims
 - R Remove unused deleteOriginal helpers, metadata computed properties and TextButton import
 - E Validate vault metadata entries after JSON parse to survive missing fields

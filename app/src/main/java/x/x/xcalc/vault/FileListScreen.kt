@@ -67,11 +67,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import x.x.xcalc.R
 import x.x.xcalc.ui.theme.FolderIconColor
 import x.x.xcalc.ui.theme.VaultAccent
 import x.x.xcalc.ui.theme.VaultAccentContent
@@ -169,9 +171,9 @@ fun FileListScreen(
                 refreshItems()
                 val failedCount = uris.size - imported.size
                 val message = if (failedCount == 0) {
-                    "Imported ${imported.size} file(s)"
+                    context.getString(R.string.imported_files, imported.size)
                 } else {
-                    "Imported ${imported.size}, failed $failedCount"
+                    context.getString(R.string.imported_failed, imported.size, failedCount)
                 }
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
@@ -187,7 +189,7 @@ fun FileListScreen(
                     repository.importFolder(uri, currentFolder)
                 }
                 refreshItems()
-                Toast.makeText(context, "Imported ${imported.size} file(s)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.imported_files, imported.size), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -233,9 +235,9 @@ fun FileListScreen(
                     }
                     val failedCount = totalCount - exportedCount
                     val message = if (failedCount == 0) {
-                        "Exported ${exportedCount} file(s)"
+                        context.getString(R.string.exported_files, exportedCount)
                     } else {
-                        "Exported ${exportedCount}, failed $failedCount"
+                        context.getString(R.string.exported_failed, exportedCount, failedCount)
                     }
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     if (exportedCount > 0) {
@@ -251,9 +253,9 @@ fun FileListScreen(
                     }
                     val failedCount = totalFiles - exportedCount
                     val message = if (failedCount == 0) {
-                        "Exported ${exportedCount} file(s)"
+                        context.getString(R.string.exported_files, exportedCount)
                     } else {
-                        "Exported ${exportedCount}, failed $failedCount"
+                        context.getString(R.string.exported_failed, exportedCount, failedCount)
                     }
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
@@ -288,7 +290,7 @@ fun FileListScreen(
                     title = { Text("${selected.size}") },
                     navigationIcon = {
                         IconButton(onClick = { selected.clear() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Clear selection")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.clear_selection))
                         }
                     },
                     actions = {
@@ -321,24 +323,24 @@ fun FileListScreen(
                                             // exempt that one stop from vault relock.
                                             onExternalView()
                                         } catch (e: Exception) {
-                                            Toast.makeText(context, "No app to open this file", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, context.getString(R.string.no_app_to_open), Toast.LENGTH_SHORT).show()
                                         }
                                         selected.clear()
                                     } else {
-                                        Toast.makeText(context, "Failed to open file", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.open_failed), Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             }) {
-                                Icon(Icons.Default.Visibility, "View")
+                                Icon(Icons.Default.Visibility, stringResource(R.string.view))
                             }
                         }
                         // Export (files and folders)
                         IconButton(onClick = { showExportDialog = true }) {
-                            Icon(Icons.Default.SaveAlt, "Export")
+                            Icon(Icons.Default.SaveAlt, stringResource(R.string.export))
                         }
                         // Move
                         IconButton(onClick = { showMoveDialog = true }) {
-                            Icon(Icons.AutoMirrored.Filled.DriveFileMove, "Move")
+                            Icon(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.move))
                         }
                         // Rename (single item only)
                         if (selected.size == 1) {
@@ -348,12 +350,12 @@ fun FileListScreen(
                                 else null
                                 if (renameTarget != null) showRenameDialog = true
                             }) {
-                                Icon(Icons.Default.Edit, "Rename")
+                                Icon(Icons.Default.Edit, stringResource(R.string.rename))
                             }
                         }
                         // Delete
                         IconButton(onClick = { showDeleteDialog = true }) {
-                            Icon(Icons.Default.Delete, "Delete")
+                            Icon(Icons.Default.Delete, stringResource(R.string.delete))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -364,19 +366,19 @@ fun FileListScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            if (currentFolder.isEmpty()) "Vault"
+                            if (currentFolder.isEmpty()) stringResource(R.string.vault_title)
                             else currentFolder.split("/").last()
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = { handleBack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                         }
                     },
                     actions = {
                         Box {
                             IconButton(onClick = { showOverflowMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More")
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more))
                             }
                             DropdownMenu(
                                 expanded = showOverflowMenu,
@@ -384,7 +386,7 @@ fun FileListScreen(
                                 containerColor = menuContainerColor
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Export all") },
+                                    text = { Text(stringResource(R.string.export_all)) },
                                     colors = MenuDefaults.itemColors(
                                         textColor = menuContentColor,
                                         leadingIconColor = menuContentColor,
@@ -409,7 +411,7 @@ fun FileListScreen(
                         containerColor = menuContainerColor,
                         contentColor = menuContentColor
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add))
                     }
                     DropdownMenu(
                         expanded = showFabMenu,
@@ -418,7 +420,7 @@ fun FileListScreen(
                     ) {
                         DropdownMenuItem(
                             leadingIcon = { Icon(Icons.Default.FileOpen, null) },
-                            text = { Text("Add files") },
+                            text = { Text(stringResource(R.string.add_files)) },
                             colors = MenuDefaults.itemColors(
                                 textColor = menuContentColor,
                                 leadingIconColor = menuContentColor,
@@ -431,7 +433,7 @@ fun FileListScreen(
                         )
                         DropdownMenuItem(
                             leadingIcon = { Icon(Icons.Default.FolderOpen, null) },
-                            text = { Text("Add folder") },
+                            text = { Text(stringResource(R.string.add_folder)) },
                             colors = MenuDefaults.itemColors(
                                 textColor = menuContentColor,
                                 leadingIconColor = menuContentColor,
@@ -444,7 +446,7 @@ fun FileListScreen(
                         )
                         DropdownMenuItem(
                             leadingIcon = { Icon(Icons.Default.CreateNewFolder, null) },
-                            text = { Text("New folder") },
+                            text = { Text(stringResource(R.string.new_folder)) },
                             colors = MenuDefaults.itemColors(
                                 textColor = menuContentColor,
                                 leadingIconColor = menuContentColor,
@@ -468,7 +470,7 @@ fun FileListScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "Empty",
+                    stringResource(R.string.empty),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -566,8 +568,8 @@ fun FileListScreen(
     // New folder dialog
     if (showNewFolderDialog) {
         InputDialog(
-            title = "New folder",
-            placeholder = "Folder name",
+            title = stringResource(R.string.new_folder),
+            placeholder = stringResource(R.string.folder_name),
             onConfirm = { name ->
                 if (name.isNotBlank()) {
                     repository.createFolder(currentFolder, name.trim())
@@ -587,15 +589,15 @@ fun FileListScreen(
             else -> ""
         }
         InputDialog(
-            title = "Rename",
-            placeholder = "New name",
+            title = stringResource(R.string.rename),
+            placeholder = stringResource(R.string.new_name),
             initialValue = currentName,
             onConfirm = { newName ->
                 if (newName.isNotBlank()) {
                     when (val t = renameTarget) {
                         is VaultFileMetadata -> repository.renameFile(t, newName.trim())
                         is String -> if (!repository.renameFolder(t, newName.trim())) {
-                            Toast.makeText(context, "Folder already exists", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.folder_exists), Toast.LENGTH_SHORT).show()
                         }
                     }
                     refreshItems()
@@ -615,8 +617,8 @@ fun FileListScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete") },
-            text = { Text("Delete ${selected.size} item(s)?") },
+            title = { Text(stringResource(R.string.delete)) },
+            text = { Text(stringResource(R.string.delete_items, selected.size) + "?") },
             confirmButton = {
                 Button(onClick = {
                     repository.deleteFiles(selectedFiles())
@@ -624,25 +626,26 @@ fun FileListScreen(
                     selected.clear()
                     refreshItems()
                     showDeleteDialog = false
-                }) { Text("Delete") }
+                }) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
 
     // Move dialog
     if (showMoveDialog) {
-        val allFolders = remember { listOf("(Root)") + repository.getAllFolderPaths() }
+        val rootLabel = stringResource(R.string.root_folder)
+        val allFolders = remember { listOf(rootLabel) + repository.getAllFolderPaths() }
         var selectedFolder by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showMoveDialog = false },
-            title = { Text("Move to") },
+            title = { Text(stringResource(R.string.move_to)) },
             text = {
                 LazyColumn {
                     items(allFolders) { folder ->
-                        val path = if (folder == "(Root)") "" else folder
+                        val path = if (folder == rootLabel) "" else folder
                         val isCurrentTarget = path == selectedFolder
                         Text(
                             text = folder,
@@ -672,37 +675,31 @@ fun FileListScreen(
                     refreshItems()
                     showMoveDialog = false
                     if (failedMoves > 0) {
-                        Toast.makeText(context, "Some folders could not be moved", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.folders_not_moved), Toast.LENGTH_SHORT).show()
                     }
-                }) { Text("Move") }
+                }) { Text(stringResource(R.string.move)) }
             },
             dismissButton = {
-                TextButton(onClick = { showMoveDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showMoveDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
 
     // Export selected files/folders dialog
     if (showExportDialog) {
-        val fileCount = selectedFiles().size
-        val folderCount = selectedFolders().size
-        val what = buildList {
-            if (fileCount > 0) add("$fileCount file(s)")
-            if (folderCount > 0) add("$folderCount folder(s)")
-        }.joinToString(" and ")
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            title = { Text("Export") },
-            text = { Text("Choose a destination folder for $what.") },
+            title = { Text(stringResource(R.string.export)) },
+            text = { Text(stringResource(R.string.choose_destination_selected, selected.size) + ".") },
             confirmButton = {
                 Button(onClick = {
                     showExportDialog = false
                     pendingExportMode = ExportMode.SELECTED
                     exportFolderLauncher.launch(null)
-                }) { Text("Export") }
+                }) { Text(stringResource(R.string.export)) }
             },
             dismissButton = {
-                TextButton(onClick = { showExportDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showExportDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -711,17 +708,17 @@ fun FileListScreen(
     if (showExportAllDialog) {
         AlertDialog(
             onDismissRequest = { showExportAllDialog = false },
-            title = { Text("Export all") },
-            text = { Text("Choose a destination folder for all exported files.") },
+            title = { Text(stringResource(R.string.export_all)) },
+            text = { Text(stringResource(R.string.choose_destination_all) + ".") },
             confirmButton = {
                 Button(onClick = {
                     showExportAllDialog = false
                     pendingExportMode = ExportMode.ALL
                     exportFolderLauncher.launch(null)
-                }) { Text("Export") }
+                }) { Text(stringResource(R.string.export)) }
             },
             dismissButton = {
-                TextButton(onClick = { showExportAllDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showExportAllDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -748,10 +745,10 @@ private fun InputDialog(
             )
         },
         confirmButton = {
-            Button(onClick = { onConfirm(text) }) { Text("OK") }
+            Button(onClick = { onConfirm(text) }) { Text(stringResource(R.string.ok)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }
