@@ -170,23 +170,6 @@ class CalculatorEngineTest {
         assertEquals("246", engine.currentInput)
     }
 
-    // --- formatNumber ---
-
-    @Test
-    fun formatNumberInteger() {
-        assertEquals("5", engine.formatNumber(5.0))
-    }
-
-    @Test
-    fun formatNumberDecimal() {
-        assertEquals("5.5", engine.formatNumber(5.5))
-    }
-
-    @Test
-    fun formatNumberNegative() {
-        assertEquals("-3", engine.formatNumber(-3.0))
-    }
-
     // --- Dot ---
 
     @Test

@@ -67,7 +67,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 19. **FIXED — Unbounded growth: calculator history and PIN-less input length.**
     `CalculatorEngine._history` grows without limit, and there is no cap on `currentInput` length (digits can be typed until the display overflows and BigDecimal ops get huge). Fix: cap history (e.g., last 100 entries) and limit input length (e.g., 15 significant digits).
 
-20. **Dead code in `VaultRepository` and `CalculatorEngine`.**
+20. **FIXED — Dead code in `VaultRepository` and `CalculatorEngine`.**
     `VaultRepository.exportFile(metadata, destDir: File)`, `getEncryptedFile()`, and `clearTemp()` have no production call sites (`clearTemp` should gain one per item 5, otherwise remove). `CalculatorEngine.formatNumber(Double)` is public but only used by tests, which duplicate the private BigDecimal version. Remove or consolidate.
 
 21. **`deleteFile` in a loop saves metadata N times.**

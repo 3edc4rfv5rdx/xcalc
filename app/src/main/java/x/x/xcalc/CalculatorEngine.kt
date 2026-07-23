@@ -24,11 +24,6 @@ class CalculatorEngine {
     private val _history = mutableListOf<String>()
     val history: List<String> get() = _history
 
-    fun formatNumber(value: Double): String {
-        val bd = BigDecimal.valueOf(value).stripTrailingZeros()
-        return bd.toPlainString()
-    }
-
     private fun formatNumber(value: BigDecimal): String {
         return value.stripTrailingZeros().toPlainString()
     }

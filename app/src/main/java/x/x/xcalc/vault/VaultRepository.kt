@@ -263,19 +263,6 @@ class VaultRepository(private val context: Context) {
         }
     }
 
-    fun exportFile(metadata: VaultFileMetadata, destDir: File): File? {
-        val encFile = File(filesDir, "${metadata.id}.enc")
-        if (!encFile.exists()) return null
-        destDir.mkdirs()
-        val outFile = uniqueFile(destDir, metadata.name)
-        encFile.inputStream().use { input ->
-            outFile.outputStream().use { output ->
-                CryptoManager.decrypt(input, output)
-            }
-        }
-        return outFile
-    }
-
     fun exportFileToTree(metadata: VaultFileMetadata, destDir: DocumentFile): Boolean {
         val encFile = File(filesDir, "${metadata.id}.enc")
         if (!encFile.exists() || !destDir.isDirectory) return false
@@ -433,19 +420,6 @@ class VaultRepository(private val context: Context) {
         }
     }
 
-    private fun uniqueFile(dir: File, name: String): File {
-        var candidate = File(dir, name)
-        if (!candidate.exists()) return candidate
-        val baseName = name.substringBeforeLast('.', name)
-        val ext = name.substringAfterLast('.', "").let { if (it == name) "" else ".$it" }
-        var counter = 1
-        while (candidate.exists()) {
-            candidate = File(dir, "${baseName} ($counter)$ext")
-            counter++
-        }
-        return candidate
-    }
-
     private fun uniqueDocumentFile(dir: DocumentFile, name: String, mimeType: String): DocumentFile? {
         val baseName = name.substringBeforeLast('.', name)
         val ext = name.substringAfterLast('.', "").let { if (it == name) "" else ".$it" }
@@ -487,10 +461,6 @@ class VaultRepository(private val context: Context) {
             }
         }
         return uri.lastPathSegment
-    }
-
-    fun getEncryptedFile(metadata: VaultFileMetadata): File {
-        return File(filesDir, "${metadata.id}.enc")
     }
 }
 
