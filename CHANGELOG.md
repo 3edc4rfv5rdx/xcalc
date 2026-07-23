@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- R Remove unused deleteOriginal helpers, metadata computed properties and TextButton import
 - E Validate vault metadata entries after JSON parse to survive missing fields
 - F Shrink long calculator results to fit on one display line
 - N Export selected folders recursively instead of silently skipping them

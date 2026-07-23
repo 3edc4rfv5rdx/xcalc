@@ -41,7 +41,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 11. **FIXED — Gson can materialize `VaultFileMetadata` with nulls in non-null Kotlin fields.**
     `VaultRepository.mutableMetadata()` parses metadata with reflective Gson, which bypasses Kotlin null-safety and constructor defaults: a JSON entry missing `id`/`name`/`relativePath` (schema evolution in a future version, or a partially corrupted file) yields nulls in non-null fields and crashes far from the cause (e.g. in `fullPath` or filtering). Fix: after `fromJson`, validate each entry (drop or repair entries with null/blank `id` or `name`, null `relativePath` → ""), or add a post-parse mapping to a validated copy.
 
-12. **Dead code accumulating again.**
+12. **FIXED — Dead code accumulating again.**
     `VaultRepository.deleteOriginal()` and `deleteOriginalTree()` have zero call sites; `VaultFileMetadata.fullPath` and `isInFolder` are unused; `MainActivity` imports `TextButton` without using it. Remove them (or wire `deleteOriginal` into the import flow if "move into vault" semantics are planned — decide, don't keep both states).
 
 13. **NOTES.md documents features the engine no longer has.**

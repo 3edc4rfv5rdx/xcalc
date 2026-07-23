@@ -444,22 +444,6 @@ class VaultRepository(private val context: Context) {
         tempDir.listFiles()?.forEach { it.delete() }
     }
 
-    fun deleteOriginal(uri: Uri) {
-        try {
-            DocumentFile.fromSingleUri(context, uri)?.delete()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to delete original file: $uri", e)
-        }
-    }
-
-    fun deleteOriginalTree(uri: Uri) {
-        try {
-            DocumentFile.fromTreeUri(context, uri)?.delete()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to delete original tree: $uri", e)
-        }
-    }
-
     private fun uniqueDocumentFile(dir: DocumentFile, name: String, mimeType: String): DocumentFile? {
         val baseName = name.substringBeforeLast('.', name)
         val ext = name.substringAfterLast('.', "").let { if (it == name) "" else ".$it" }

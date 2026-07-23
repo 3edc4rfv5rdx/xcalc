@@ -9,10 +9,4 @@ data class VaultFileMetadata(
     val mimeType: String = "application/octet-stream",
     val size: Long = 0L,
     val dateAdded: Long = System.currentTimeMillis()
-) {
-    val fullPath: String
-        get() = if (relativePath.isEmpty()) name else "$relativePath/$name"
-
-    val isInFolder: Boolean
-        get() = relativePath.isNotEmpty()
-}
+)
