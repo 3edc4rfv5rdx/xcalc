@@ -331,7 +331,8 @@ class VaultRepository(private val context: Context) {
 
         val folderName = oldPath.substringAfterLast("/")
         val newPath = if (targetParentPath.isEmpty()) folderName else "$targetParentPath/$folderName"
-        if (newPath == oldPath) return false
+        // Moving to the current parent is a harmless no-op, not a failure.
+        if (newPath == oldPath) return true
         // Refuse to silently merge into an existing folder.
         if (folderExists(newPath)) return false
 

@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Treat moving a folder to its current parent as a no-op instead of a failure
 - E Fix vault screen compile error after nullable state refactor
 - E Run PIN hashing and PinManager init off the main thread so the vault opens right at the 5s gesture
 - R Make vault viewing explicitly read-only and drop the dead external-edit re-encrypt path

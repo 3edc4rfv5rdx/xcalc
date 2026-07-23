@@ -29,7 +29,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## Low — cleanup / robustness
 
-8. **Moving a folder to its current location is reported as a failure.**
+8. **FIXED — Moving a folder to its current location is reported as a failure.**
    `VaultRepository.moveFolder()` returns false when `newPath == oldPath` (moving a folder into its current parent), and `FileListScreen`'s move dialog counts that as a failed move, showing the misleading toast "Some folders could not be moved" for a harmless no-op. Fix: return true (treat as successful no-op) for `newPath == oldPath`, keep false only for real conflicts (target exists, moving into own subtree).
 
 9. **Export of a mixed selection silently drops folders.**
