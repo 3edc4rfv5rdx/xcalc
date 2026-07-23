@@ -44,7 +44,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 12. **FIXED — Dead code accumulating again.**
     `VaultRepository.deleteOriginal()` and `deleteOriginalTree()` have zero call sites; `VaultFileMetadata.fullPath` and `isInFolder` are unused; `MainActivity` imports `TextButton` without using it. Remove them (or wire `deleteOriginal` into the import flow if "move into vault" semantics are planned — decide, don't keep both states).
 
-13. **NOTES.md documents features the engine no longer has.**
+13. **FIXED — NOTES.md documents features the engine no longer has.**
     NOTES.md claims `%` (percent) is implemented with specific semantics ("if there is a stored value, % uses it as base; otherwise divides current input by 100"), but `CalculatorEngine.pressButton` has no `%` case and no button exists in the UI grid. Either re-implement percent per the documented semantics or update NOTES.md to drop the claim.
 
 14. **All vault/calculator UI strings are hardcoded in code instead of string resources.**
