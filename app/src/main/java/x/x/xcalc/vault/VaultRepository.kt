@@ -26,8 +26,10 @@ class VaultRepository(private val context: Context) {
 
     private var metadataCache: MutableList<VaultFileMetadata>? = null
 
+    // Returns a defensive copy: the internal cache is mutated under
+    // @Synchronized while callers may iterate on another thread.
     @Synchronized
-    fun loadMetadata(): List<VaultFileMetadata> = mutableMetadata()
+    fun loadMetadata(): List<VaultFileMetadata> = mutableMetadata().toList()
 
     private fun mutableMetadata(): MutableList<VaultFileMetadata> {
         metadataCache?.let { return it }

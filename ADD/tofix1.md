@@ -13,7 +13,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 3. **`reEncryptFromTemp` overwrites the original ciphertext in place. — FIXED**
    In `VaultRepository.reEncryptFromTemp()` the output stream writes directly to the existing `${id}.enc`. If encryption fails or the process dies mid-write, the original encrypted file is destroyed and the only remaining copy is the plaintext temp file (which gets deleted by the caller). Fix: encrypt to a temp file first, then atomically replace the original.
 
-4. **`loadMetadata()` leaks the live internal mutable list — concurrent modification risk.**
+4. **`loadMetadata()` leaks the live internal mutable list — concurrent modification risk. — FIXED**
    `VaultRepository.loadMetadata()` returns `mutableMetadata()` which is the internal `metadataCache` itself. Callers iterate/filter it on the UI thread (`refreshItems`, `getFolders`, `exportAllToTree`) while imports mutate the same list on `Dispatchers.IO` → possible `ConcurrentModificationException` and stale reads. Fix: return a defensive copy (`toList()`) from `loadMetadata()` and keep all mutation behind the `@Synchronized` methods.
 
 ## High — security / plaintext leakage
