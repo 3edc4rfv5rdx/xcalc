@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import x.x.xcalc.ui.theme.DigitButton
 import x.x.xcalc.ui.theme.DigitButtonContent
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 enum class PinMode { SETUP, CONFIRM, UNLOCK }
 
@@ -50,13 +52,16 @@ enum class PinMode { SETUP, CONFIRM, UNLOCK }
 fun PinScreen(
     isSetup: Boolean,
     pinManager: PinManager,
-    onPinComplete: (String) -> Boolean,
+    onPinComplete: suspend (String) -> Boolean,
     onBack: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     var pin by remember { mutableStateOf("") }
     var firstPin by remember { mutableStateOf("") }
     var mode by remember { mutableStateOf(if (isSetup) PinMode.SETUP else PinMode.UNLOCK) }
     var error by remember { mutableStateOf("") }
+    // Blocks input while the PBKDF2 hash runs in the background.
+    var busy by remember { mutableStateOf(false) }
     var cooldownUntil by remember { mutableLongStateOf(pinManager.cooldownUntil) }
     var cooldownRemaining by remember { mutableIntStateOf(0) }
 
@@ -81,7 +86,7 @@ fun PinScreen(
     }
 
     fun onDigit(digit: String) {
-        if (cooldownRemaining > 0) return
+        if (cooldownRemaining > 0 || busy) return
         if (pin.length < 8) {
             pin += digit
             error = ""
@@ -89,7 +94,7 @@ fun PinScreen(
     }
 
     fun onSubmit() {
-        if (cooldownRemaining > 0) return
+        if (cooldownRemaining > 0 || busy) return
         if (pin.length < 4) {
             error = "Min 4 digits"
             return
@@ -102,9 +107,13 @@ fun PinScreen(
             }
             PinMode.CONFIRM -> {
                 if (pin == firstPin) {
-                    if (!onPinComplete(pin)) {
-                        error = "Error"
-                        pin = ""
+                    scope.launch {
+                        busy = true
+                        if (!onPinComplete(pin)) {
+                            error = "Error"
+                            pin = ""
+                        }
+                        busy = false
                     }
                 } else {
                     error = "PIN mismatch"
@@ -114,20 +123,22 @@ fun PinScreen(
                 }
             }
             PinMode.UNLOCK -> {
-                if (onPinComplete(pin)) {
-                    // success
-                } else {
-                    pinManager.registerFailedAttempt()
-                    pin = ""
-                    cooldownUntil = pinManager.cooldownUntil
-                    error = if (System.currentTimeMillis() < cooldownUntil) "" else "Wrong PIN"
+                scope.launch {
+                    busy = true
+                    if (!onPinComplete(pin)) {
+                        pinManager.registerFailedAttempt()
+                        pin = ""
+                        cooldownUntil = pinManager.cooldownUntil
+                        error = if (System.currentTimeMillis() < cooldownUntil) "" else "Wrong PIN"
+                    }
+                    busy = false
                 }
             }
         }
     }
 
     fun onBackspace() {
-        if (cooldownRemaining > 0) return
+        if (cooldownRemaining > 0 || busy) return
         if (pin.isNotEmpty()) {
             pin = pin.dropLast(1)
         }

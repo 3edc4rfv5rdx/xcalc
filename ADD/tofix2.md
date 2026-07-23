@@ -21,7 +21,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 5. **FIXED (obsolete — CRC tracking removed with item 4) — CRC32 of the decrypted file is computed on the main thread when viewing.**
    In `FileListScreen`'s view action, `repository.decryptToTemp(meta)` runs under `withContext(Dispatchers.IO)`, but the subsequent `initialCrc = fileCrc32(tempFile)` runs in the main-thread part of the coroutine. For a large file (video) this reads the entire file on the UI thread — frozen UI / ANR. Fix: compute the CRC inside the same `Dispatchers.IO` block that decrypts (return the pair from `withContext`).
 
-6. **PBKDF2 (100 000 iterations) runs on the main thread during PIN verify/setup.**
+6. **FIXED — PBKDF2 (100 000 iterations) runs on the main thread during PIN verify/setup.**
    `PinManager.verifyPin()`/`setupPin()` are called synchronously from `PinScreen` button callbacks (`onPinComplete` in `VaultScreen`). PBKDF2WithHmacSHA256 at 100k iterations takes hundreds of milliseconds on slower devices — visible freeze on every PIN submit. `PinManager` construction (MasterKey + EncryptedSharedPreferences, keystore + disk I/O) also happens during first composition. Fix: run hashing/verification on `Dispatchers.Default`/`IO` (make the PIN completion flow async with a small loading state), and lazily initialize the prefs off the main thread.
 
 7. **FIXED (obsolete — reEncryptFromTemp removed with item 4) — `reEncryptFromTemp` resurrects a deleted file as an orphan ciphertext blob.**
