@@ -38,7 +38,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 10. **FIXED — After `=`, pressing `+/-` then a digit appends to the result instead of starting a new number.**
     `toggleSign()` unconditionally sets `resetInput = false`. Sequence `5 + 3 = +/- 2` produces `-82` instead of starting fresh entry `2` (standard calculator behavior). Decide the intended semantics; if standard, preserve `resetInput` when toggling a just-computed result.
 
-11. **Long-pressing `=` to open the vault also fires the tap handler on release.**
+11. **FIXED — Long-pressing `=` to open the vault also fires the tap handler on release.**
     In `MainActivity.CalcButtonView`, the `=` button uses `detectTapGestures(onTap = ..., onPress = { delay(5000) → onLongPress() })`. Holding 5 s opens the vault, but releasing the finger then triggers `onTap` → `engine.pressButton("=")`, silently mutating calculator state behind the vault screen. Fix: track that the long-press fired (e.g., a flag set in the delayed job) and suppress the subsequent tap; or use `awaitEachGesture` with explicit consumption.
 
 12. **`createFolder` never checks existence — duplicate `.folder` markers accumulate.**

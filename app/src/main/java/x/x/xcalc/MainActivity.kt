@@ -303,11 +303,16 @@ private fun CalcButtonView(
     val scope = rememberCoroutineScope()
     val pressModifier = if (onLongPress != null) {
         Modifier.pointerInput(onLongPress, onClick) {
+            // Suppress the tap that fires on release after the long-press
+            // action has already run.
+            var longPressFired = false
             detectTapGestures(
-                onTap = { onClick() },
+                onTap = { if (!longPressFired) onClick() },
                 onPress = {
+                    longPressFired = false
                     val job = scope.launch {
                         delay(5000)
+                        longPressFired = true
                         onLongPress()
                     }
                     tryAwaitRelease()
