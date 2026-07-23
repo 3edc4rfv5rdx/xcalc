@@ -3,6 +3,8 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- F Show Ok or Error for 2s after first-time PIN setup: Ok opens the vault, Error returns to the calculator
+- F Label the two first-time PIN setup entries as Pin1 and Pin2 on the display
 - I Update NOTES.md and README for calculator-keypad PIN entry and current helper scripts
 - N Enter the PIN on the calculator keypad itself instead of a separate PIN screen: orange display digits hint the mode, zeros mask the PIN, setup shows real digits, Error and countdown stay calculator-styled
 - E Run instrumentation tests against isolated vault and PIN storage so they cannot wipe real data

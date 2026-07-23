@@ -92,6 +92,9 @@ private const val EXTERNAL_ACTIVITY_RELOCK_MS = 60_000L
 private const val PIN_MIN_LENGTH = 4
 private const val PIN_MAX_LENGTH = 8
 
+// How long the first-time setup verdict ("Ok"/"Error") stays on the display.
+private const val PIN_VERDICT_MS = 2_000L
+
 // PIN entry happens on the calculator keypad itself — no separate screen
 // that would give the vault away. The only mode hint is the display color.
 private enum class PinStage { UNLOCK, SETUP, CONFIRM }
@@ -128,6 +131,8 @@ fun CalculatorScreen() {
     // Blocks input while the PBKDF2 hash runs in the background.
     var pinBusy by remember { mutableStateOf(false) }
     var pinError by remember { mutableStateOf(false) }
+    // Shows "Ok" after a successful first-time setup.
+    var pinOk by remember { mutableStateOf(false) }
     var pinCooldownUntil by remember { mutableLongStateOf(0L) }
     var pinCooldownRemaining by remember { mutableIntStateOf(0) }
 
@@ -138,6 +143,7 @@ fun CalculatorScreen() {
         pinFirst = ""
         pinBusy = false
         pinError = false
+        pinOk = false
         pinCooldownUntil = 0
         pinCooldownRemaining = 0
     }
@@ -168,6 +174,8 @@ fun CalculatorScreen() {
                 pinStage = PinStage.CONFIRM
             }
             PinStage.CONFIRM -> {
+                // The setup verdict shows for 2 seconds; "Ok" then opens the
+                // vault directly, "Error" drops back to the plain calculator.
                 if (pinBuffer == pinFirst) {
                     val pin = pinBuffer
                     scope.launch {
@@ -176,14 +184,19 @@ fun CalculatorScreen() {
                         withContext(Dispatchers.Default) {
                             PinManager.getInstance(context).setupPin(pin)
                         }
+                        pinOk = true
+                        delay(PIN_VERDICT_MS)
                         exitPinMode()
                         showVault.value = true
                     }
                 } else {
                     pinError = true
                     pinBuffer = ""
-                    pinFirst = ""
-                    pinStage = PinStage.SETUP
+                    scope.launch {
+                        pinBusy = true
+                        delay(PIN_VERDICT_MS)
+                        exitPinMode()
+                    }
                 }
             }
             PinStage.UNLOCK -> {
@@ -362,14 +375,16 @@ fun CalculatorScreen() {
         verticalArrangement = Arrangement.Bottom
     ) {
         // In PIN mode the display shows the cooldown countdown, "Error", the
-        // real digits during first-time setup (a one-off private flow), or
-        // one zero per typed digit on unlock. The yellow value color is the
-        // only hint that the calculator is in PIN mode.
+        // real digits during first-time setup (a one-off private flow;
+        // "Pin1"/"Pin2" label the two setup entries), or one zero per typed
+        // digit on unlock. The orange value color is the only hint that the
+        // calculator is in PIN mode.
         val pinDisplayValue = when {
             pinCooldownRemaining > 0 -> pinCooldownRemaining.toString()
             pinError -> "Error"
-            pinStage == PinStage.SETUP || pinStage == PinStage.CONFIRM ->
-                pinBuffer.ifEmpty { "0" }
+            pinOk -> "Ok"
+            pinStage == PinStage.SETUP -> pinBuffer.ifEmpty { "Pin1" }
+            pinStage == PinStage.CONFIRM -> pinBuffer.ifEmpty { "Pin2" }
             else -> "0".repeat(pinBuffer.length).ifEmpty { "0" }
         }
         DisplayArea(
