@@ -44,7 +44,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 12. **FIXED — `createFolder` never checks existence — duplicate `.folder` markers accumulate.**
     `VaultRepository.createFolder()` always appends a new marker entry. Creating a folder whose name already exists (or re-importing the same folder tree — `importFolder`/`importDocumentRecursive` call `createFolder` for every directory) adds duplicate metadata rows forever. UI dedups via a set, but metadata grows unboundedly and semantics are unclean. Fix: return early if a marker (or any entry) with that `relativePath` already exists.
 
-13. **`importFolder` builds paths from the unsanitized name while `createFolder` sanitizes it.**
+13. **FIXED — `importFolder` builds paths from the unsanitized name while `createFolder` sanitizes it.**
     In `VaultRepository.importFolder()` and `importDocumentRecursive()`, `subFolder` is composed from the raw `folderName`, but the marker is created with `sanitizeName(folderName)`. A directory named with `/` or leading/trailing spaces places files under a path that differs from the marker's path. Also, a name that sanitizes to empty (`.`/`..`) makes `createFolder`'s `require()` throw, crashing the import coroutine. Fix: sanitize once up front, use the same sanitized value for both the marker and the path, and skip (not crash on) unsanitizable names.
 
 14. **Imported file names are not sanitized.**

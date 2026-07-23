@@ -182,7 +182,8 @@ class VaultRepository(private val context: Context) {
 
     fun importFolder(treeUri: Uri, targetFolder: String): List<VaultFileMetadata> {
         val docFile = DocumentFile.fromTreeUri(context, treeUri) ?: return emptyList()
-        val folderName = docFile.name ?: "imported"
+        // Sanitize once so the marker and the file paths always match.
+        val folderName = sanitizeName(docFile.name ?: "imported").ifEmpty { "imported" }
         val subFolder = if (targetFolder.isEmpty()) folderName else "$targetFolder/$folderName"
         createFolder(targetFolder, folderName)
         val imported = mutableListOf<VaultFileMetadata>()
@@ -197,7 +198,9 @@ class VaultRepository(private val context: Context) {
     ) {
         for (child in doc.listFiles()) {
             if (child.isDirectory) {
-                val folderName = child.name ?: continue
+                // Skip directories whose name sanitizes to nothing instead of crashing.
+                val folderName = sanitizeName(child.name ?: "")
+                if (folderName.isEmpty()) continue
                 val subFolder = if (currentFolder.isEmpty()) folderName else "$currentFolder/$folderName"
                 createFolder(currentFolder, folderName)
                 importDocumentRecursive(child, subFolder, result)
