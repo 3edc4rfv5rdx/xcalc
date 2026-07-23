@@ -139,7 +139,7 @@ class VaultRepository(private val context: Context) {
     @Synchronized
     fun importFile(uri: Uri, targetFolder: String): VaultFileMetadata? {
         val resolver = context.contentResolver
-        val displayName = getDisplayName(uri) ?: "unknown"
+        val displayName = sanitizeName(getDisplayName(uri) ?: "unknown").ifEmpty { "unknown" }
         var mimeType = resolver.getType(uri) ?: "application/octet-stream"
         if (mimeType == "application/octet-stream") {
             val ext = displayName.substringAfterLast('.', "").lowercase()

@@ -47,7 +47,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 13. **FIXED — `importFolder` builds paths from the unsanitized name while `createFolder` sanitizes it.**
     In `VaultRepository.importFolder()` and `importDocumentRecursive()`, `subFolder` is composed from the raw `folderName`, but the marker is created with `sanitizeName(folderName)`. A directory named with `/` or leading/trailing spaces places files under a path that differs from the marker's path. Also, a name that sanitizes to empty (`.`/`..`) makes `createFolder`'s `require()` throw, crashing the import coroutine. Fix: sanitize once up front, use the same sanitized value for both the marker and the path, and skip (not crash on) unsanitizable names.
 
-14. **Imported file names are not sanitized.**
+14. **FIXED — Imported file names are not sanitized.**
     `VaultRepository.importFile()` stores `displayName` (or `uri.lastPathSegment`) as-is, while `renameFile` applies `sanitizeName`. A name containing `/` breaks `fullPath` semantics and makes export path/`createFile` behave incorrectly. Fix: run the display name through `sanitizeName()` on import (fallback to "unknown" if empty).
 
 15. **Folder move/rename does not handle path collisions — silent merge.**
