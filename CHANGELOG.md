@@ -3,6 +3,8 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- I Prefix changelog release headers with v to match tag names
+- I Rework build scripts to myplayer scheme: decade numbering, stricter clean-tree checks, ABI split installs, auto changelog section, apkx copy
 - I Document accepted vault security model in NOTES.md
 - R Grant view URI permission via ClipData instead of deprecated query loop
 - R Delete selected files in one batch with a single metadata save
@@ -33,7 +35,7 @@
 - E Keep display unchanged on backspace before second operand input
 - F Replace percent key with +/- sign toggle
 
-## 0.3.20260401+74
+## v0.3.20260401+74
 - R Stream encryption instead of loading entire file into memory
 - E Add error logging instead of silently swallowing exceptions
 - E Add @Synchronized to VaultRepository to prevent race conditions
@@ -51,24 +53,24 @@
 - I Switch from version.properties to build_number.txt
 - I Add tag/push/release scripts (80/81/82)
 
-## 0.3.20260401+71
+## v0.3.20260401+71
 - F Format numbers without scientific notation
 - I Merge version and build number into single file
 
-## 0.3.20260327+68
+## v0.3.20260327+68
 - F Set vault menu and FAB to #22B2D6 with black content
 - F Tune vault menu colors for better contrast
 - N Add adaptive launcher icons with custom blue background
 - F Improve vault menu visibility with blue high-contrast colors
 
-## 0.3.20260326+64
+## v0.3.20260326+64
 - E Fix calculator history scrolling and remove 8-entry cap
 - F Increase history limit to 8 and fix UI refresh on AC
 - I Add .debug applicationId suffix and debug install script
 - N Add distinct debug launcher icon with red tint and DEBUG label
 - N Replace default launcher icon with custom xcalc icon
 
-## 0.3.20260325+59
+## v0.3.20260325+59
 - R Extract CalculatorEngine and add comprehensive test suite
 - I Move build number increment to shell scripts
 - N Add calculator operation history UI and improve display readability
@@ -79,7 +81,7 @@
 - E Do not delete source files after vault import
 - E Fix vault view temp-file lifecycle and open reliability
 
-## 0.1.20260324+47
+## v0.1.20260324+47
 - N Calculator with basic arithmetic operations
 - N Repeat-equals functionality
 - N Hidden encrypted file vault with PIN protection

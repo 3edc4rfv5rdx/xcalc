@@ -7,6 +7,7 @@ cd "$SCRIPT_DIR"
 PROJECT="xcalc"
 APK_DIR="$SCRIPT_DIR/app/build/outputs/apk/release"
 CHANGELOG_FILE="$(mktemp /tmp/xcalc-release-notes.XXXXXX.md)"
+trap 'rm -f "$CHANGELOG_FILE" "${CHANGELOG_FILE}.tmp"' EXIT
 DRY_RUN=false
 
 # ------------------------------------------------------------
@@ -21,17 +22,28 @@ UPLOAD_TIMEOUT=180     # seconds per attempt
 UPLOAD_RETRY=2         # number of attempts
 
 echo "=== Detecting latest tag ==="
-TAG=$(git tag --list 'v*' | sort -V | tail -n 1)
-
-if [[ -z "$TAG" ]]; then
+mapfile -t TAGS < <(git tag --list 'v*' | sort -V)
+if (( ${#TAGS[@]} == 0 )); then
     echo "ERROR: No tags found."
     exit 1
 fi
 
+TAG="${TAGS[$(( ${#TAGS[@]} - 1 ))]}"
+if (( ${#TAGS[@]} > 1 )); then
+    PREV_TAG="${TAGS[$(( ${#TAGS[@]} - 2 ))]}"
+else
+    PREV_TAG=""
+fi
+
 echo "Tag: $TAG"
+if [[ -n "$PREV_TAG" ]]; then
+    echo "Prev: $PREV_TAG"
+else
+    echo "Prev: (none)"
+fi
 
 # ------------------------------------------------------------
-# Parse tag: v0.3.20260401+73  ->  VERSION=0.3.20260401  BUILD=73
+# Parse tag: v0.3.20260401+74  ->  VERSION=0.3.20260401  BUILD=74
 # ------------------------------------------------------------
 CLEAN_TAG="${TAG#v}"
 VERSION="${CLEAN_TAG%%+*}"
@@ -49,34 +61,41 @@ APK_PREFIX="${PROJECT}-${VERSION}+${BUILD}-release"
 
 # ------------------------------------------------------------
 # Build changelog from CHANGELOG.md
-# Collect all sections between current tag and previous tag
+# Extract the notes under the latest tag section and stop at the
+# previous tag section. If there is no previous tag, stop at the next
+# top-level changelog header.
 # ------------------------------------------------------------
 echo "=== Building changelog from CHANGELOG.md ==="
 
-PREV_TAG=$(git tag --list 'v*' | sort -V | grep -B1 "^${TAG}$" | head -1)
-if [[ "$PREV_TAG" == "$TAG" ]]; then
-    PREV_TAG=""
+CUR_SECTION="## ${TAG}"
+
+if ! grep -qF "$CUR_SECTION" CHANGELOG.md; then
+    echo "ERROR: Changelog does not contain section for $TAG."
+    exit 1
 fi
 
-if [[ -n "$PREV_TAG" ]]; then
-    PREV_CLEAN="${PREV_TAG#v}"
-    PREV_VER="${PREV_CLEAN%%+*}"
-    PREV_BUILD="${PREV_CLEAN##*+}"
-    STOP_HEADER="## ${PREV_VER}+${PREV_BUILD}"
-    echo "Previous tag: $PREV_TAG (stop at: $STOP_HEADER)"
-else
-    STOP_HEADER=""
-    echo "No previous tag, collecting entire changelog."
-fi
+LEGEND_LINE=$(grep -m 1 '^> ' CHANGELOG.md || true)
 
-awk -v cur="## ${VERSION}+${BUILD}" -v stop="$STOP_HEADER" '
+awk -v cur="$CUR_SECTION" -v stop="${PREV_TAG:+## ${PREV_TAG}}" '
     $0 == cur { capture=1; next }
-    capture && /^## / {
-        if (stop == "" || $0 == stop) exit
-        print ""; print $0; next
-    }
+    capture && stop != "" && $0 == stop { exit }
+    capture && stop == "" && /^## / { exit }
     capture { print }
 ' CHANGELOG.md > "$CHANGELOG_FILE"
+
+if [[ ! -s "$CHANGELOG_FILE" ]]; then
+    echo "ERROR: No changelog notes found between $TAG and ${PREV_TAG:-end of file}."
+    exit 1
+fi
+
+if [[ -n "$LEGEND_LINE" ]]; then
+    {
+        echo "$LEGEND_LINE"
+        echo
+        cat "$CHANGELOG_FILE"
+    } > "${CHANGELOG_FILE}.tmp"
+    mv "${CHANGELOG_FILE}.tmp" "$CHANGELOG_FILE"
+fi
 
 echo "Generated changelog:"
 echo "--------------------------------------------------"
@@ -86,6 +105,9 @@ echo "--------------------------------------------------"
 # ------------------------------------------------------------
 # Find APK files
 # ------------------------------------------------------------
+# Require the exact artifacts built for this tag. No mtime fallback: picking the "newest"
+# *-arm64-v8a.apk / *-universal.apk would happily upload a stale build (older version/build
+# that was never cleaned) under this tag's asset name, mislabeling the release.
 APK_ARM64="$APK_DIR/${APK_PREFIX}-arm64-v8a.apk"
 APK_UNIVERSAL="$APK_DIR/${APK_PREFIX}-universal.apk"
 
@@ -182,9 +204,5 @@ done
 
 echo "=== Release upload completed successfully ==="
 
-# ------------------------------------------------------------
-# Cleanup
-# ------------------------------------------------------------
-rm -f "$CHANGELOG_FILE"
-
+# Temp changelog is removed by the EXIT trap.
 sleep 2

@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -e
+
+BUILD_FILE="build_number.txt"
+
+echo "=== Checking that the working tree is clean ==="
+
+# --porcelain reports staged, unstaged AND untracked files; git diff --quiet misses untracked,
+# so a new (still untracked) source file could be bundled into the APK yet omitted from the tag.
+DIRTY="$(git status --porcelain)"
+if [[ -n "$DIRTY" ]]; then
+    echo "ERROR: You have uncommitted or untracked changes:"
+    echo "$DIRTY"
+    echo "Please commit, stash, or remove them before running this script."
+    exit 1
+fi
+
+echo "OK: Working tree is clean."
+
+echo "=== Reading build info ==="
+
+if [[ ! -f "$BUILD_FILE" ]]; then
+    echo "ERROR: $BUILD_FILE not found."
+    exit 1
+fi
+
+source "$BUILD_FILE"
+
+if [[ -z "$version" || -z "$build" ]]; then
+    echo "ERROR: Failed to read version/build from $BUILD_FILE"
+    exit 1
+fi
+
+TAG="v${version}+${build}"
+SECTION="## ${TAG}"
+CHANGELOG_FILE="CHANGELOG.md"
+
+echo "Version: $version"
+echo "Build:   $build"
+echo "Tag:     $TAG"
+
+# Check if tag already exists
+if git tag --list "$TAG" | grep -q "$TAG"; then
+    echo "Tag $TAG already exists. Nothing to do."
+    exit 0
+fi
+
+if [[ ! -f "$CHANGELOG_FILE" ]]; then
+    echo "ERROR: $CHANGELOG_FILE not found."
+    exit 1
+fi
+
+if grep -qF "$SECTION" "$CHANGELOG_FILE"; then
+    echo "Changelog already has section for $TAG. Skipping update."
+else
+    echo "=== Inserting $TAG section right after Unreleased ==="
+    updated_changelog="$(mktemp /tmp/xcalc-changelog-updated.XXXXXX.md)"
+
+    awk -v section="$SECTION" '
+        BEGIN { in_unreleased=0 }
+
+        /^## Unreleased$/ {
+            # Keep Unreleased at the top and add the new release section right after it.
+            print $0
+            print section
+            in_unreleased=1
+            next
+        }
+
+        in_unreleased && /^## / {
+            in_unreleased=0
+        }
+
+        { print }
+    ' "$CHANGELOG_FILE" > "$updated_changelog"
+
+    if ! grep -qF "$SECTION" "$updated_changelog"; then
+        echo "ERROR: Failed to insert $SECTION into changelog."
+        rm -f "$updated_changelog"
+        exit 1
+    fi
+
+    mv "$updated_changelog" "$CHANGELOG_FILE"
+
+    echo "=== Committing changelog update ==="
+    git add "$CHANGELOG_FILE"
+    git commit -m "Add release notes for $TAG"
+fi
+
+echo "=== Creating tag $TAG ==="
+git tag -a "$TAG" -m "Build $build"
+
+echo "=== Done: tag $TAG created ==="
+
+sleep 2
