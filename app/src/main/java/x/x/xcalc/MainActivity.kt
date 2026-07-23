@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
@@ -302,11 +304,24 @@ private fun DisplayArea(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
+            // Long results shrink to stay on one line instead of wrapping.
+            val baseStyle = MaterialTheme.typography.displayLarge
+            var fontScale by remember(value) { mutableFloatStateOf(1f) }
             Text(
                 text = value,
-                style = MaterialTheme.typography.displayLarge,
+                style = baseStyle,
+                fontSize = baseStyle.fontSize * fontScale,
                 textAlign = TextAlign.End,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+                onTextLayout = { result ->
+                    if (result.didOverflowWidth && fontScale > 0.35f) {
+                        fontScale *= 0.9f
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

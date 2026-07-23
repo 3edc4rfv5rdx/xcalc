@@ -35,7 +35,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 9. **FIXED — Export of a mixed selection silently drops folders.**
    In `FileListScreen`, the export action is shown when `selectedFiles().isNotEmpty()`, but if the selection also contains folders, `ExportMode.SELECTED` exports only the files — the folders and their contents are silently skipped with no indication. Fix: either export selected folders recursively (reuse `ensureDocumentPath` + per-file export under the folder's subtree) or exclude the export action / warn when folders are selected.
 
-10. **Long calculation results overflow the display.**
+10. **FIXED — Long calculation results overflow the display.**
     The main value `Text` in `DisplayArea` (MainActivity.kt) has no `maxLines`, auto-sizing, or horizontal scrolling; a result like `999999999999999 × 999999999999999` (~30 digits, and division can produce even longer strings) wraps onto multiple lines and squeezes the history area. Fix: use a single-line auto-shrinking text (e.g. `maxLines = 1` with `TextOverflow`-aware font scaling, or `basicMarquee`/horizontal scroll) for the current value.
 
 11. **Gson can materialize `VaultFileMetadata` with nulls in non-null Kotlin fields.**
