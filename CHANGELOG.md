@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- R Delete selected files in one batch with a single metadata save
 - R Remove unused exportFile, getEncryptedFile and formatNumber(Double)
 - F Cap calculator history at 100 entries and input at 15 digits
 - E Keep calculator and vault state across rotation and theme changes

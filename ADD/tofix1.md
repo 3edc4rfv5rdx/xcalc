@@ -70,7 +70,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 20. **FIXED — Dead code in `VaultRepository` and `CalculatorEngine`.**
     `VaultRepository.exportFile(metadata, destDir: File)`, `getEncryptedFile()`, and `clearTemp()` have no production call sites (`clearTemp` should gain one per item 5, otherwise remove). `CalculatorEngine.formatNumber(Double)` is public but only used by tests, which duplicate the private BigDecimal version. Remove or consolidate.
 
-21. **`deleteFile` in a loop saves metadata N times.**
+21. **FIXED — `deleteFile` in a loop saves metadata N times.**
     In `FileListScreen`'s delete dialog, each selected file triggers a separate `repository.deleteFile()` → full encrypt+write of metadata per file. Add a batch `deleteFiles(list)` that saves once.
 
 22. **Deprecated APIs.**

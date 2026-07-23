@@ -299,11 +299,14 @@ class VaultRepository(private val context: Context) {
     }
 
     @Synchronized
-    fun deleteFile(metadata: VaultFileMetadata) {
-        val encFile = File(filesDir, "${metadata.id}.enc")
-        encFile.delete()
+    fun deleteFiles(files: List<VaultFileMetadata>) {
+        if (files.isEmpty()) return
+        val ids = files.map { it.id }.toSet()
+        for (id in ids) {
+            File(filesDir, "$id.enc").delete()
+        }
         val list = mutableMetadata()
-        list.removeAll { it.id == metadata.id }
+        list.removeAll { it.id in ids }
         metadataCache = list
         saveMetadata()
     }

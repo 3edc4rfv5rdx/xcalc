@@ -651,7 +651,7 @@ fun FileListScreen(
             text = { Text("Delete ${selected.size} item(s)?") },
             confirmButton = {
                 Button(onClick = {
-                    for (f in selectedFiles()) repository.deleteFile(f)
+                    repository.deleteFiles(selectedFiles())
                     for (f in selectedFolders()) repository.deleteFolder(f.path)
                     selected.clear()
                     refreshItems()
