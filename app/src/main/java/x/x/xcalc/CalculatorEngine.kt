@@ -48,13 +48,18 @@ class CalculatorEngine {
         // switch the next digit press into append mode.
     }
 
-    fun resetAll() {
+    // Clears the in-progress computation but keeps the history.
+    private fun resetComputation() {
         currentInput = "0"
         storedValue = null
         pendingOp = null
         resetInput = false
         lastOp = null
         lastRight = null
+    }
+
+    fun resetAll() {
+        resetComputation()
         _history.clear()
     }
 
@@ -85,8 +90,9 @@ class CalculatorEngine {
     }
 
     fun pressButton(label: String) {
+        // Recovering from an error resets the computation, not the history.
         if (currentInput == "Error" && label !in listOf("AC", "C")) {
-            resetAll()
+            resetComputation()
         }
         when {
             label == "AC" -> resetAll()

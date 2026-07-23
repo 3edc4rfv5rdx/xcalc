@@ -17,7 +17,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 3. **FIXED — All metadata mutations and the first metadata load run on the main thread in `FileListScreen`.**
    `refreshItems()` (first call decrypts and parses the whole index), `createFolder`, `deleteFiles` + `deleteFolder` (which also delete `.enc` files from disk), `moveFiles`, `moveFolder`, `renameFile`, `renameFolder` are all invoked directly from Compose click handlers. Each mutation re-encrypts and rewrites the entire metadata file synchronously — disk I/O + AES + JSON on the UI thread, causing jank and potential ANR on large vaults (import/export already use `Dispatchers.IO` correctly). Fix: wrap these repository calls in `scope.launch { withContext(Dispatchers.IO) { ... } }` and refresh the list afterwards, mirroring the import path.
 
-4. **Recovering from an "Error" result wipes the entire calculation history.**
+4. **FIXED — Recovering from an "Error" result wipes the entire calculation history.**
    In `CalculatorEngine.pressButton`, when `currentInput == "Error"` any button except AC/C triggers `resetAll()`, which also does `_history.clear()`. So after a division by zero, pressing any digit silently erases the whole history — clearly broader than needed to recover from the error. Fix: reset only the computation state (currentInput, storedValue, pendingOp, resetInput, lastOp, lastRight) and keep `_history`; keep full clear only for AC.
 
 5. **`saveMetadata` renames without fsync — power loss can still produce an empty/truncated index.**
