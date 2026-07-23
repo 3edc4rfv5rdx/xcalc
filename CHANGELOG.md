@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Back up unreadable vault metadata before overwriting with empty index
 - E Write vault metadata atomically via temp file and rename
 - E Preserve edited vault temp files when leaving the vault screen
 - E Switch vault export to SAF destination folders for modern Android

@@ -42,6 +42,10 @@ class VaultRepository(private val context: Context) {
             (list ?: emptyList()).toMutableList()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load metadata", e)
+            // Preserve the unreadable file so a later save cannot destroy
+            // the only copy of the vault index.
+            val backup = File(vaultDir, "metadata.enc.corrupt-${System.currentTimeMillis()}")
+            metadataFile.copyTo(backup, overwrite = true)
             mutableListOf()
         }
         return metadataCache!!
