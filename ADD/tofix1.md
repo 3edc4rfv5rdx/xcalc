@@ -76,5 +76,5 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 22. **FIXED (intent part; EncryptedSharedPreferences migration deferred) — Deprecated APIs.**
     `queryIntentActivities(intent, 0)` (FileListScreen view action) is deprecated; the manual grant loop can be replaced by attaching a `ClipData` to the intent with `FLAG_GRANT_READ_URI_PERMISSION`. `EncryptedSharedPreferences`/`MasterKey` (PinManager) are deprecated in androidx.security-crypto 1.1 — note for future migration, low priority for a single-user app.
 
-23. **Design note: vault encryption key is not bound to the PIN.**
+23. **FIXED (risk accepted, documented in NOTES.md) — Design note: vault encryption key is not bound to the PIN.**
     `CryptoManager` uses a Keystore key with no user-auth binding; the PIN in `PinManager` is purely a UI gate. Anyone who can execute code as the app (root, debuggable build, extracted device) can decrypt the vault without the PIN. If this matters, derive a content key from the PIN (PBKDF2 already present) and wrap it with the Keystore key; otherwise document the accepted risk.

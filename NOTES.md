@@ -1,5 +1,11 @@
 # Project Notes
 
+## Security model (accepted risk)
+- Vault files are encrypted with an AES-256-GCM key stored in Android Keystore; the key never leaves the hardware.
+- The PIN is only a UI gate: it is NOT bound to the encryption key. Code running as the app (root, debug access) can decrypt the vault without the PIN.
+- Decision (2026-07-23): risk accepted. Binding the key to the PIN would make a forgotten PIN equal to total data loss and require vault migration — not worth it for this app.
+- What the current model does protect against: copying files off the device (backup, flash extraction) — undecryptable without the hardware key.
+
 ## Summary
 - We are building an Android calculator app in Kotlin.
 - User is new to Kotlin.

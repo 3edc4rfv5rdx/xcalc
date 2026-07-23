@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- I Document accepted vault security model in NOTES.md
 - R Grant view URI permission via ClipData instead of deprecated query loop
 - R Delete selected files in one batch with a single metadata save
 - R Remove unused exportFile, getEncryptedFile and formatNumber(Double)
