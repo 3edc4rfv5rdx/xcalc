@@ -244,6 +244,10 @@ class VaultRepository(private val context: Context) {
                 val counting = CountingInputStream(input)
                 encFile.outputStream().use { output ->
                     CryptoManager.encrypt(counting, output)
+                    // Fsync the blob before the fsynced index references it:
+                    // power loss must not leave an entry pointing at a
+                    // truncated ciphertext that GCM will reject forever.
+                    output.fd.sync()
                 }
                 originalSize = counting.bytesRead
             } ?: return null

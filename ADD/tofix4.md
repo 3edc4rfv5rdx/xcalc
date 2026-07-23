@@ -9,7 +9,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## Medium — data integrity / performance
 
-2. **Imported encrypted blobs are never fsynced — power loss right after an import can leave the index pointing at a truncated `.enc` file.**
+2. **FIXED — Imported encrypted blobs are never fsynced — power loss right after an import can leave the index pointing at a truncated `.enc` file.**
    `VaultRepository.saveMetadata()` carefully fsyncs the index temp file before the atomic rename (tofix3 item 5), but `importFile()` writes `${id}.enc` via a plain `encFile.outputStream()` with no `fd.sync()` before `saveMetadata()` persists the entry referencing it. After power loss / battery pull, ext4 can leave the blob empty or truncated while the fsynced index survives with the entry: GCM authentication then fails on every open ("Failed to open file") and the content is unrecoverable — the user may have already deleted the original, trusting the import. Fix: in `importFile`, write via `FileOutputStream` and call `out.fd.sync()` after `CryptoManager.encrypt` completes, before saving metadata. Same pattern is already used in `saveMetadata`, so mirror it (a temp-file + rename is optional here since a partial blob without a metadata entry is already cleaned by the orphan sweep).
 
 3. **The Move dialog queries the repository on the main thread during composition — and can block behind a long-running import holding the instance lock.**
