@@ -46,8 +46,10 @@ import androidx.compose.ui.unit.sp
 import x.x.xcalc.R
 import x.x.xcalc.ui.theme.DigitButton
 import x.x.xcalc.ui.theme.DigitButtonContent
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class PinMode { SETUP, CONFIRM, UNLOCK }
 
@@ -130,7 +132,8 @@ fun PinScreen(
                 scope.launch {
                     busy = true
                     if (!onPinComplete(pin)) {
-                        pinManager.registerFailedAttempt()
+                        // Synchronous prefs write — keep it off the main thread.
+                        withContext(Dispatchers.IO) { pinManager.registerFailedAttempt() }
                         pin = ""
                         cooldownUntil = pinManager.cooldownUntil
                         error = if (System.currentTimeMillis() < cooldownUntil) "" else context.getString(R.string.pin_wrong)

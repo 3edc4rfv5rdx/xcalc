@@ -53,6 +53,9 @@ class PinManager(context: Context) {
     val cooldownUntil: Long
         get() = prefs.getLong(KEY_COOLDOWN_UNTIL, 0L)
 
+    // Call off the main thread: commit() writes synchronously. apply()
+    // could lose the increment if the app is force-killed right after a
+    // wrong attempt, letting the cooldown be bypassed.
     fun registerFailedAttempt() {
         val fails = prefs.getInt(KEY_FAIL_COUNT, 0) + 1
         val editor = prefs.edit()
@@ -62,7 +65,7 @@ class PinManager(context: Context) {
         } else {
             editor.putInt(KEY_FAIL_COUNT, fails)
         }
-        editor.apply()
+        editor.commit()
     }
 
     fun clearFailures() {

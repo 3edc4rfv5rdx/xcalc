@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Write the PIN fail counter synchronously so force-killing the app cannot bypass the cooldown
 - E Deduplicate corrupt index backups and survive backup failures instead of crashing the vault open
 - E Report failed files in the folder import toast instead of silently dropping them
 - E Fix trailing dot in export collision names for files without an extension
