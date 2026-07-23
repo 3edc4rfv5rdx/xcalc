@@ -116,7 +116,8 @@ private fun fileCrc32(file: File): Long {
 @Composable
 fun FileListScreen(
     repository: VaultRepository,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onExternalView: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -345,6 +346,9 @@ fun FileListScreen(
                                         }
                                         try {
                                             context.startActivity(viewIntent)
+                                            // The viewer covers us and fires ON_STOP;
+                                            // exempt that one stop from vault relock.
+                                            onExternalView()
                                         } catch (e: Exception) {
                                             Toast.makeText(context, "No app to open this file", Toast.LENGTH_SHORT).show()
                                         }

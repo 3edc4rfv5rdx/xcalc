@@ -1,6 +1,5 @@
 package x.x.xcalc
 
-import android.app.Activity
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -52,6 +51,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import x.x.xcalc.BuildConfig
 import x.x.xcalc.ui.theme.DigitButton
 import x.x.xcalc.ui.theme.DigitButtonContent
@@ -152,17 +153,40 @@ fun CalculatorScreen() {
     if (showVault.value) {
         // Block screenshots and the recents preview while the vault is
         // visible; the calculator itself stays capturable to keep the disguise.
-        val activity = LocalContext.current as? Activity
+        val activity = LocalContext.current as? ComponentActivity
         DisposableEffect(Unit) {
             activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
             onDispose {
                 activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
-        VaultScreen(onBack = {
-            showVault.value = false
-            backspaceTapCount = 0
-        })
+        // Close the vault whenever the app is backgrounded so reopening from
+        // recents lands on the calculator. A stop caused by launching an
+        // external viewer from the vault is exempted once, or the viewer
+        // would lose its temp file and the user their place.
+        val externalViewActive = remember { mutableStateOf(false) }
+        DisposableEffect(activity) {
+            if (activity == null) return@DisposableEffect onDispose { }
+            val observer = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_STOP) {
+                    if (externalViewActive.value) {
+                        externalViewActive.value = false
+                    } else {
+                        showVault.value = false
+                        backspaceTapCount = 0
+                    }
+                }
+            }
+            activity.lifecycle.addObserver(observer)
+            onDispose { activity.lifecycle.removeObserver(observer) }
+        }
+        VaultScreen(
+            onBack = {
+                showVault.value = false
+                backspaceTapCount = 0
+            },
+            onExternalView = { externalViewActive.value = true }
+        )
         return
     }
 

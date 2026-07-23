@@ -7,7 +7,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 1. **FIXED — Vault screens are visible in the recents screenshot and screen capture — no FLAG_SECURE.**
    The app is a disguised vault, but the activity window never sets `WindowManager.LayoutParams.FLAG_SECURE`. When the user switches apps while the PIN screen or file list is open, the system stores a screenshot of it for the recents switcher, and screen-recording/casting captures it too — defeating the calculator disguise. Fix: in `MainActivity` (or reactively when `showVault` becomes true), set `window.setFlags(FLAG_SECURE, FLAG_SECURE)` while the vault UI is shown (optionally clear it when back on the calculator, or keep it always-on for simplicity).
 
-2. **Vault stays unlocked while the app is in the background — no re-lock on lifecycle stop.**
+2. **FIXED — Vault stays unlocked while the app is in the background — no re-lock on lifecycle stop.**
    `VaultScreen` keeps `state = FILE_LIST` in Compose state; the activity is not recreated on home/recents (and `configChanges` suppresses recreation). If the user opens the vault and then presses Home, anyone who reopens the app from recents lands directly in the unlocked file list — no PIN asked. Fix: observe lifecycle (e.g. `LifecycleEventObserver` on `ON_STOP`) and reset the vault to `PIN_UNLOCK` (or close the vault entirely back to the calculator). Decide the exact policy: immediate lock on ON_STOP is simplest; a short grace period is an option but adds state.
 
 3. **`VaultRepository` is instantiated per vault entry while background persist uses the old instance — races on metadata and temp files.**
