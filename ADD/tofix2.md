@@ -32,7 +32,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 8. **FIXED — Moving a folder to its current location is reported as a failure.**
    `VaultRepository.moveFolder()` returns false when `newPath == oldPath` (moving a folder into its current parent), and `FileListScreen`'s move dialog counts that as a failed move, showing the misleading toast "Some folders could not be moved" for a harmless no-op. Fix: return true (treat as successful no-op) for `newPath == oldPath`, keep false only for real conflicts (target exists, moving into own subtree).
 
-9. **Export of a mixed selection silently drops folders.**
+9. **FIXED — Export of a mixed selection silently drops folders.**
    In `FileListScreen`, the export action is shown when `selectedFiles().isNotEmpty()`, but if the selection also contains folders, `ExportMode.SELECTED` exports only the files — the folders and their contents are silently skipped with no indication. Fix: either export selected folders recursively (reuse `ensureDocumentPath` + per-file export under the folder's subtree) or exclude the export action / warn when folders are selected.
 
 10. **Long calculation results overflow the display.**

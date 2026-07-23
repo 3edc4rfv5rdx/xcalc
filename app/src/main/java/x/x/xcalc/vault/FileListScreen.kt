@@ -212,18 +212,26 @@ fun FileListScreen(
             when (mode) {
                 ExportMode.SELECTED -> {
                     val filesToExport = selectedFiles()
-                    val exportedCount = withContext(Dispatchers.IO) {
+                    val foldersToExport = selectedFolders().map { it.path }
+                    val (exportedCount, totalCount) = withContext(Dispatchers.IO) {
                         val targetDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
-                            ?: return@withContext 0
+                            ?: return@withContext 0 to 0
                         var count = 0
+                        var total = filesToExport.size
                         for (metadata in filesToExport) {
                             if (repository.exportFileToTree(metadata, targetDir)) {
                                 count++
                             }
                         }
-                        count
+                        for (folderPath in foldersToExport) {
+                            val (exported, totalInFolder) =
+                                repository.exportFolderToTree(folderPath, targetDir)
+                            count += exported
+                            total += totalInFolder
+                        }
+                        count to total
                     }
-                    val failedCount = filesToExport.size - exportedCount
+                    val failedCount = totalCount - exportedCount
                     val message = if (failedCount == 0) {
                         "Exported ${exportedCount} file(s)"
                     } else {
@@ -324,11 +332,9 @@ fun FileListScreen(
                                 Icon(Icons.Default.Visibility, "View")
                             }
                         }
-                        // Export
-                        if (selectedFiles().isNotEmpty()) {
-                            IconButton(onClick = { showExportDialog = true }) {
-                                Icon(Icons.Default.SaveAlt, "Export")
-                            }
+                        // Export (files and folders)
+                        IconButton(onClick = { showExportDialog = true }) {
+                            Icon(Icons.Default.SaveAlt, "Export")
                         }
                         // Move
                         IconButton(onClick = { showMoveDialog = true }) {
@@ -676,13 +682,18 @@ fun FileListScreen(
         )
     }
 
-    // Export selected files dialog
+    // Export selected files/folders dialog
     if (showExportDialog) {
-        val count = selectedFiles().size
+        val fileCount = selectedFiles().size
+        val folderCount = selectedFolders().size
+        val what = buildList {
+            if (fileCount > 0) add("$fileCount file(s)")
+            if (folderCount > 0) add("$folderCount folder(s)")
+        }.joinToString(" and ")
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
             title = { Text("Export") },
-            text = { Text("Choose a destination folder for $count file(s).") },
+            text = { Text("Choose a destination folder for $what.") },
             confirmButton = {
                 Button(onClick = {
                     showExportDialog = false

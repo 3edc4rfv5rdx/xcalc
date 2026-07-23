@@ -269,6 +269,26 @@ class VaultRepository(private val context: Context) {
         }
     }
 
+    // Export every file under folderPath into destDir, recreating the folder
+    // itself and its subtree. Returns exported count and total file count.
+    fun exportFolderToTree(folderPath: String, destDir: DocumentFile): Pair<Int, Int> {
+        val parentPrefix = folderPath.substringBeforeLast('/', "")
+        val files = loadMetadata().filter {
+            it.mimeType != "inode/directory" &&
+                (it.relativePath == folderPath || it.relativePath.startsWith("$folderPath/"))
+        }
+        var exportedCount = 0
+        for (meta in files) {
+            val relative = if (parentPrefix.isEmpty()) meta.relativePath
+            else meta.relativePath.removePrefix("$parentPrefix/")
+            val subDir = ensureDocumentPath(destDir, relative) ?: continue
+            if (exportFileToTree(meta, subDir)) {
+                exportedCount++
+            }
+        }
+        return exportedCount to files.size
+    }
+
     fun exportAllToTree(treeUri: Uri): Int {
         val rootDir = DocumentFile.fromTreeUri(context, treeUri) ?: return 0
         val all = loadMetadata().filter { it.mimeType != "inode/directory" }
