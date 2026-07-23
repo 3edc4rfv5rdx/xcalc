@@ -35,7 +35,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 9. **FIXED — `toggleSign` reformats typed input and loses trailing decimal digits.**
    In `CalculatorEngine.toggleSign()`, a non-zero value goes through `formatNumber(toggled)` which does `stripTrailingZeros()`. Typing `5.0`, pressing `+/-`, then typing `5` yields `-55` instead of `-5.05` — the in-progress decimal entry is destroyed. Fix: toggle the sign textually on `currentInput` (add/remove leading `-`) instead of parse+reformat while the user is typing.
 
-10. **After `=`, pressing `+/-` then a digit appends to the result instead of starting a new number.**
+10. **FIXED — After `=`, pressing `+/-` then a digit appends to the result instead of starting a new number.**
     `toggleSign()` unconditionally sets `resetInput = false`. Sequence `5 + 3 = +/- 2` produces `-82` instead of starting fresh entry `2` (standard calculator behavior). Decide the intended semantics; if standard, preserve `resetInput` when toggling a just-computed result.
 
 11. **Long-pressing `=` to open the vault also fires the tap handler on release.**

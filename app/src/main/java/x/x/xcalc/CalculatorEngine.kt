@@ -44,7 +44,8 @@ class CalculatorEngine {
         } else {
             "-$currentInput"
         }
-        resetInput = false
+        // Keep resetInput as-is: toggling a just-computed result must not
+        // switch the next digit press into append mode.
     }
 
     fun resetAll() {

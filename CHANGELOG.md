@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Start new entry when typing a digit after toggling a result sign
 - E Toggle sign textually to preserve in-progress decimal input
 - E Use constant-time comparison for PIN hash verification
 - E Persist PIN fail count and cooldown so retry limit survives restarts
