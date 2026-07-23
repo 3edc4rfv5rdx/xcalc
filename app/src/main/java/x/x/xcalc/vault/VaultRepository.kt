@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.io.FilterInputStream
+import java.io.IOException
 import java.io.InputStream
 
 class VaultRepository(private val context: Context) {
@@ -59,10 +60,16 @@ class VaultRepository(private val context: Context) {
         // mid-write cannot corrupt the live metadata file.
         val tmpFile = File(vaultDir, "metadata.enc.tmp")
         tmpFile.writeBytes(encrypted)
-        if (!tmpFile.renameTo(metadataFile)) {
-            metadataFile.delete()
-            if (!tmpFile.renameTo(metadataFile)) {
-                throw java.io.IOException("Failed to replace metadata file")
+        replaceFile(tmpFile, metadataFile)
+    }
+
+    // Atomically replace target with tmpFile so the target is never
+    // left half-written.
+    private fun replaceFile(tmpFile: File, target: File) {
+        if (!tmpFile.renameTo(target)) {
+            target.delete()
+            if (!tmpFile.renameTo(target)) {
+                throw IOException("Failed to replace ${target.name}")
             }
         }
     }
@@ -221,14 +228,23 @@ class VaultRepository(private val context: Context) {
     @Synchronized
     fun reEncryptFromTemp(metadata: VaultFileMetadata, tempFile: File) {
         val encFile = File(filesDir, "${metadata.id}.enc")
+        // Encrypt to a temp file first so a failure cannot destroy the
+        // original ciphertext.
+        val tmpEnc = File(filesDir, "${metadata.id}.enc.tmp")
         val originalSize: Long
-        tempFile.inputStream().use { input ->
-            val counting = CountingInputStream(input)
-            encFile.outputStream().use { output ->
-                CryptoManager.encrypt(counting, output)
+        try {
+            tempFile.inputStream().use { input ->
+                val counting = CountingInputStream(input)
+                tmpEnc.outputStream().use { output ->
+                    CryptoManager.encrypt(counting, output)
+                }
+                originalSize = counting.bytesRead
             }
-            originalSize = counting.bytesRead
+        } catch (e: Exception) {
+            tmpEnc.delete()
+            throw e
         }
+        replaceFile(tmpEnc, encFile)
         val list = mutableMetadata()
         val idx = list.indexOfFirst { it.id == metadata.id }
         if (idx >= 0) {

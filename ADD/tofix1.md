@@ -10,7 +10,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 2. **Corrupted/unreadable metadata is silently replaced by an empty list, then persisted. — FIXED**
    In `VaultRepository.mutableMetadata()`, any exception during load (decrypt failure, JSON error) is caught and `metadataCache` becomes an empty mutable list. The next mutating operation (`createFolder`, `importFile`, etc.) calls `saveMetadata()` and overwrites `metadata.enc` with that empty list — permanently orphaning every existing vault file. Fix: on load failure, put the repository into a read-only/error state (or keep a `loadFailed` flag) and refuse to save until the cause is resolved; at minimum back up the unreadable `metadata.enc` before any overwrite.
 
-3. **`reEncryptFromTemp` overwrites the original ciphertext in place.**
+3. **`reEncryptFromTemp` overwrites the original ciphertext in place. — FIXED**
    In `VaultRepository.reEncryptFromTemp()` the output stream writes directly to the existing `${id}.enc`. If encryption fails or the process dies mid-write, the original encrypted file is destroyed and the only remaining copy is the plaintext temp file (which gets deleted by the caller). Fix: encrypt to a temp file first, then atomically replace the original.
 
 4. **`loadMetadata()` leaks the live internal mutable list — concurrent modification risk.**
