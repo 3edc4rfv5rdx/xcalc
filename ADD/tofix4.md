@@ -34,7 +34,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## Tests
 
-9. **`VaultRepositoryTest.moveFilesBetweenFolders` and `renameFile` mutate the defensive copy returned by `loadMetadata()` — both tests are broken.**
+9. **FIXED — `VaultRepositoryTest.moveFilesBetweenFolders` and `renameFile` mutate the defensive copy returned by `loadMetadata()` — both tests are broken.**
    Since `VaultRepository.loadMetadata()` was changed to return `mutableMetadata().toList()` (a defensive copy, tofix1 item 4), the test pattern `val meta = repo.loadMetadata() as MutableList; meta.add(file)` no longer registers the entry in the repository: the added `VaultFileMetadata` exists only in the discarded copy, so `repo.moveFiles(...)` / `repo.renameFile(...)` find no matching id and silently no-op, and the subsequent assertions fail. In `renameFile` the snapshot has exactly one element, so Kotlin's `toList()` returns a `SingletonList` and `meta.add(file)` throws `UnsupportedOperationException` before the assertions even run. Fix: give tests a legitimate way to insert a file entry — e.g. a `@VisibleForTesting internal fun addEntryForTest(meta: VaultFileMetadata)` in `VaultRepository` (add + saveMetadata under the lock), or import a real temp file through `importFile` with a `file://` URI — and update both tests to use it; never cast `loadMetadata()`'s result to `MutableList`.
 
 10. **Instrumentation tests wipe the real app's vault and PIN when run on a device with live data.**

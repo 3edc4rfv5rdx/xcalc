@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
+import androidx.annotation.VisibleForTesting
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.JsonArray
@@ -52,6 +53,17 @@ class VaultRepository(private val context: Context) {
     // @Synchronized while callers may iterate on another thread.
     @Synchronized
     fun loadMetadata(): List<VaultFileMetadata> = mutableMetadata().toList()
+
+    // Test-only: register a metadata entry without importing any content.
+    // loadMetadata() returns a copy, so tests cannot seed entries through it.
+    @VisibleForTesting
+    @Synchronized
+    internal fun addEntryForTest(meta: VaultFileMetadata) {
+        val list = mutableMetadata()
+        list.add(meta)
+        metadataCache = list
+        saveMetadata()
+    }
 
     private fun mutableMetadata(): MutableList<VaultFileMetadata> {
         metadataCache?.let { return it }

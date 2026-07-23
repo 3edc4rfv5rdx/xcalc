@@ -135,10 +135,8 @@ class VaultRepositoryTest {
         repo.createFolder("", "A")
         repo.createFolder("", "B")
         // Add a fake file entry to folder A
-        val meta = repo.loadMetadata() as MutableList
         val file = VaultFileMetadata(name = "test.txt", relativePath = "A", mimeType = "text/plain")
-        meta.add(file)
-        // Force save by creating a new folder (triggers metadata save)
+        repo.addEntryForTest(file)
         repo.moveFiles(listOf(file), "B")
         val filesInB = repo.getFilesInFolder("B")
         assertTrue(filesInB.any { it.name == "test.txt" })
@@ -173,9 +171,8 @@ class VaultRepositoryTest {
     @Test
     fun renameFile() {
         repo.createFolder("", "Docs")
-        val meta = repo.loadMetadata() as MutableList
         val file = VaultFileMetadata(name = "old.txt", relativePath = "Docs", mimeType = "text/plain")
-        meta.add(file)
+        repo.addEntryForTest(file)
         repo.renameFile(file, "new.txt")
         val files = repo.getFilesInFolder("Docs")
         assertTrue(files.any { it.name == "new.txt" })

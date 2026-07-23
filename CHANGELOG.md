@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Fix repository tests that mutated the defensive metadata copy instead of the vault index
 - R Delete selected folders in one batch with a single index save
 - E Write the PIN fail counter synchronously so force-killing the app cannot bypass the cooldown
 - E Deduplicate corrupt index backups and survive backup failures instead of crashing the vault open
