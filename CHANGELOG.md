@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Fsync the vault index temp file before the atomic rename so power loss cannot truncate it
 - E Keep the calculation history when recovering from an Error result
 - E Run vault metadata reads and mutations off the main thread in the file list
 - E Relock the vault when returning more than a minute after an external viewer was opened

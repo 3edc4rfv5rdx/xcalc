@@ -20,7 +20,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 4. **FIXED — Recovering from an "Error" result wipes the entire calculation history.**
    In `CalculatorEngine.pressButton`, when `currentInput == "Error"` any button except AC/C triggers `resetAll()`, which also does `_history.clear()`. So after a division by zero, pressing any digit silently erases the whole history — clearly broader than needed to recover from the error. Fix: reset only the computation state (currentInput, storedValue, pendingOp, resetInput, lastOp, lastRight) and keep `_history`; keep full clear only for AC.
 
-5. **`saveMetadata` renames without fsync — power loss can still produce an empty/truncated index.**
+5. **FIXED — `saveMetadata` renames without fsync — power loss can still produce an empty/truncated index.**
    `VaultRepository.saveMetadata()` writes `metadata.enc.tmp` via `writeBytes` and renames it over the live file. `renameTo` is atomic for the directory entry, but the tmp file's data may still be in page cache; on power loss/battery pull after the rename but before writeback, ext4 can leave a zero-length or truncated `metadata.enc` — the vault index is lost (load fails, `.corrupt` backup of a truncated file, empty list). Fix: write via `FileOutputStream`, call `fd.sync()` before closing, then rename (optionally fsync the directory too). This is the standard atomic-replace pattern and costs one flush per metadata save.
 
 ## Low — robustness / cleanup

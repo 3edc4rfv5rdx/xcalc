@@ -11,6 +11,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import java.io.File
+import java.io.FileOutputStream
 import java.io.FilterInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -127,10 +128,15 @@ class VaultRepository(private val context: Context) {
     private fun saveMetadata() {
         val json = gson.toJson(metadataCache ?: return)
         val encrypted = CryptoManager.encryptBytes(json.toByteArray())
-        // Write to a temp file first, then rename atomically so a crash
-        // mid-write cannot corrupt the live metadata file.
+        // Write to a temp file first, fsync it, then rename atomically:
+        // a crash mid-write cannot corrupt the live metadata file, and a
+        // power loss right after the rename cannot leave a truncated one
+        // (worst case the old index survives).
         val tmpFile = File(vaultDir, "metadata.enc.tmp")
-        tmpFile.writeBytes(encrypted)
+        FileOutputStream(tmpFile).use { out ->
+            out.write(encrypted)
+            out.fd.sync()
+        }
         replaceFile(tmpFile, metadataFile)
     }
 
