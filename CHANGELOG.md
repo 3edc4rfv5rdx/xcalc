@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- I Drop debug build scripts, applicationId suffix and debug icon, test with release builds only
 - I Drop stale 04-InstallToSams.sh entry from gitignore
 - I Prefix changelog release headers with v to match tag names
 - I Rework build scripts to myplayer scheme: decade numbering, stricter clean-tree checks, ABI split installs, auto changelog section, apkx copy
