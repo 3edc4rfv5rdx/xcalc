@@ -16,10 +16,10 @@ class VaultRepositoryTest {
     @Before
     fun setUp() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        // Clean vault directory before each test
-        val vaultDir = File(context.filesDir, "vault")
-        vaultDir.deleteRecursively()
-        repo = VaultRepository(context)
+        // Isolated base dir: tests must never touch the real vault data.
+        val baseDir = File(context.filesDir, "test_vault_base")
+        baseDir.deleteRecursively()
+        repo = VaultRepository(context, baseDir)
     }
 
     // --- loadMetadata ---

@@ -20,8 +20,9 @@ import java.io.InputStream
 // Production code must use getInstance(): all synchronization (metadata
 // cache, @Synchronized methods, metadata.enc.tmp) is per-instance, so two
 // instances over the same files can race and corrupt the vault index.
-// The visible constructor exists for tests only.
-class VaultRepository(private val context: Context) {
+// The visible constructor exists for tests only; baseDir lets tests use an
+// isolated directory so they never touch the real vault data.
+class VaultRepository(private val context: Context, baseDir: File = context.filesDir) {
 
     companion object {
         private const val TAG = "VaultRepository"
@@ -37,7 +38,7 @@ class VaultRepository(private val context: Context) {
     }
 
     private val gson = Gson()
-    private val vaultDir = File(context.filesDir, "vault").apply { mkdirs() }
+    private val vaultDir = File(baseDir, "vault").apply { mkdirs() }
     private val filesDir = File(vaultDir, "files").apply { mkdirs() }
     private val metadataFile = File(vaultDir, "metadata.enc")
     private val tempDir = File(context.cacheDir, "vault_temp").apply { mkdirs() }

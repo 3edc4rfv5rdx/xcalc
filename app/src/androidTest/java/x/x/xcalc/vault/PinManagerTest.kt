@@ -12,15 +12,18 @@ class PinManagerTest {
 
     private lateinit var pinManager: PinManager
 
+    // Isolated prefs name: tests must never touch the real PIN prefs.
+    private val testPrefsName = "vault_pin_prefs_test"
+
     @Before
     fun setUp() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        // Clear pin prefs before each test
-        context.getSharedPreferences("vault_pin_prefs", 0).edit().clear().apply()
+        // Clear test pin prefs before each test
+        context.getSharedPreferences(testPrefsName, 0).edit().clear().commit()
         // Also delete the encrypted prefs file to ensure clean state
         val prefsDir = java.io.File(context.filesDir.parentFile, "shared_prefs")
-        prefsDir.listFiles()?.filter { it.name.startsWith("vault_pin_prefs") }?.forEach { it.delete() }
-        pinManager = PinManager(context)
+        prefsDir.listFiles()?.filter { it.name.startsWith(testPrefsName) }?.forEach { it.delete() }
+        pinManager = PinManager(context, testPrefsName)
     }
 
     @Test

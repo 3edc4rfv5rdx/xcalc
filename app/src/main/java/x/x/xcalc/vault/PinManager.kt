@@ -8,7 +8,9 @@ import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-class PinManager(context: Context) {
+// The prefsName parameter exists for tests only, so they never touch the
+// real PIN preferences.
+class PinManager(context: Context, prefsName: String = "vault_pin_prefs") {
 
     private val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -16,7 +18,7 @@ class PinManager(context: Context) {
 
     private val prefs = EncryptedSharedPreferences.create(
         context,
-        "vault_pin_prefs",
+        prefsName,
         masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
