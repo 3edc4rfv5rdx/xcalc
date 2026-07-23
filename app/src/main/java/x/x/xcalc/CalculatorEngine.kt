@@ -38,12 +38,11 @@ class CalculatorEngine {
             resetInput = false
             return
         }
-        val current = parseInput() ?: BigDecimal.ZERO
-        val toggled = current.negate()
-        currentInput = when {
-            toggled.compareTo(BigDecimal.ZERO) == 0 && currentInput.startsWith("-") -> "0"
-            toggled.compareTo(BigDecimal.ZERO) == 0 -> "-0"
-            else -> formatNumber(toggled)
+        // Toggle textually to preserve in-progress input like "5.0".
+        currentInput = if (currentInput.startsWith("-")) {
+            currentInput.substring(1)
+        } else {
+            "-$currentInput"
         }
         resetInput = false
     }
