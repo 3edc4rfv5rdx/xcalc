@@ -41,7 +41,8 @@ fun VaultScreen(onBack: () -> Unit, onExternalView: () -> Unit) {
     }
 
     val pm = pinManager
-    if (pm == null || state == null) {
+    val st = state
+    if (pm == null || st == null) {
         // Blank vault-colored placeholder while PinManager initializes.
         Box(
             modifier = Modifier
@@ -51,7 +52,7 @@ fun VaultScreen(onBack: () -> Unit, onExternalView: () -> Unit) {
         return
     }
 
-    when (state) {
+    when (st) {
         VaultState.PIN_SETUP -> {
             PinScreen(
                 isSetup = true,
