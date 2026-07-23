@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Handle system back in vault screens instead of closing the app
 - E Persist viewed temp files on IO thread instead of blocking UI
 - E Reject folder move or rename that would merge into an existing folder
 - E Sanitize imported file names like renamed ones

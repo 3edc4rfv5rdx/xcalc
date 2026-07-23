@@ -56,7 +56,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 16. **FIXED — `persistViewedTemps` does file CRC32 + full re-encryption on the main thread.**
     In `FileListScreen.kt`, `persistViewedTemps()` is called from `onDispose` and `handleBack()` on the UI thread; for a large edited file this means synchronous hashing plus encryption → frozen UI / ANR. Fix: run the persist work on `Dispatchers.IO` (e.g., via a non-cancellable scope since it runs during teardown).
 
-17. **No system back handling in the vault — hardware/gesture back exits the whole app.**
+17. **FIXED — No system back handling in the vault — hardware/gesture back exits the whole app.**
     `FileListScreen`'s `handleBack()` (clear selection → up one folder → leave vault) is wired only to the toolbar arrow. A system back press bypasses this navigation entirely. Fix: add `BackHandler { handleBack() }` in `FileListScreen` (and a `BackHandler { onBack() }` in `PinScreen`).
 
 18. **All calculator and vault UI state is lost on configuration change.**

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -296,6 +297,9 @@ fun FileListScreen(
             }
         }
     }
+
+    // System back mirrors the toolbar arrow: clear selection, go up, leave.
+    BackHandler { handleBack() }
 
     Scaffold(
         topBar = {

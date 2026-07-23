@@ -1,5 +1,6 @@
 package x.x.xcalc.vault
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,6 +67,9 @@ fun PinScreen(
             cooldownUntil = 0
         }
     }
+
+    // System back leaves the PIN screen instead of closing the app.
+    BackHandler { onBack() }
 
     val title = when (mode) {
         PinMode.SETUP -> "Set PIN"
