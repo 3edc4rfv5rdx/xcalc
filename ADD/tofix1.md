@@ -59,7 +59,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 17. **FIXED — No system back handling in the vault — hardware/gesture back exits the whole app.**
     `FileListScreen`'s `handleBack()` (clear selection → up one folder → leave vault) is wired only to the toolbar arrow. A system back press bypasses this navigation entirely. Fix: add `BackHandler { handleBack() }` in `FileListScreen` (and a `BackHandler { onBack() }` in `PinScreen`).
 
-18. **All calculator and vault UI state is lost on configuration change.**
+18. **FIXED — All calculator and vault UI state is lost on configuration change.**
     `MainActivity.CalculatorScreen` holds `CalculatorEngine`, history, and `showVault` in plain `remember`; `FileListScreen` similarly holds `currentFolder` and `viewedTemps`. Rotating the device resets the calculator mid-computation and kicks the user out of the vault (also disposing `viewedTemps`, which deletes temp files an external viewer may still be reading). Fix: persist engine state with `rememberSaveable` (or a ViewModel); decide deliberately whether vault lock-on-rotate is intended and handle `viewedTemps` across recreation.
 
 ## Low — cleanup / robustness

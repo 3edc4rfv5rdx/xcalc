@@ -19,6 +19,7 @@
         android:theme="@style/Theme.Xcalc">
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density"
             android:exported="true"
             android:theme="@style/Theme.Xcalc">
             <intent-filter>
