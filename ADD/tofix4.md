@@ -17,7 +17,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## Low — robustness / cleanup
 
-4. **`uniqueDocumentFile` gives extension-less files a trailing dot on name collision (`"foo (1)."`).**
+4. **FIXED — `uniqueDocumentFile` gives extension-less files a trailing dot on name collision (`"foo (1)."`).**
    In `VaultRepository.uniqueDocumentFile()`, `ext` is computed as `name.substringAfterLast('.', "").let { if (it == name) "" else ".$it" }`. `substringAfterLast('.', "")` returns `""` (not `name`) when there is no dot, so the `it == name` guard is dead code and `ext` becomes `"."` — exporting a duplicate of an extension-less file creates `"foo (1)."` instead of `"foo (1)"`. Fix: change the guard to `if (it.isEmpty()) "" else ".$it"`. Optionally also handle dot-leading names (`.bashrc` currently yields base name `""` → `" (1).bashrc"`), e.g. treat a name whose only dot is at index 0 as having no extension.
 
 5. **Folder import reports only the success count — files that failed to import inside the tree are silently ignored.**

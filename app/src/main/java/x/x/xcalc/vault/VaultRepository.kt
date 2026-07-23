@@ -533,7 +533,7 @@ class VaultRepository(private val context: Context) {
 
     private fun uniqueDocumentFile(dir: DocumentFile, name: String, mimeType: String): DocumentFile? {
         val baseName = name.substringBeforeLast('.', name)
-        val ext = name.substringAfterLast('.', "").let { if (it == name) "" else ".$it" }
+        val ext = name.substringAfterLast('.', "").let { if (it.isEmpty()) "" else ".$it" }
         var candidateName = name
         var counter = 1
         while (dir.findFile(candidateName) != null) {
