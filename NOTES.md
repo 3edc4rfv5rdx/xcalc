@@ -14,12 +14,8 @@
 - Buttons: digits are yellow (`#FFD54F`), operators are salmon (`#E9967A`) with black text, emphasis uses theme primary.
 - Backspace icon added; `=` moved to the right; button font is bold and large (33sp).
 - Logic: basic operations implemented (+, −, ×, ÷, +/-, AC, C, backspace, decimals).
-- Special gesture: dialog shows only if user taps backspace twice, then long-presses `=` for 5 seconds (normal `=` tap works immediately).
+- Special gesture: tap backspace twice, then long-press `=` for 5 seconds to enter PIN mode (normal `=` tap works immediately).
+- PIN entry happens on the calculator itself — no separate PIN screen. The display value turns orange (the only mode hint), unlock digits are masked as zeros, first-time setup/confirm shows real digits, `=` submits, backspace on empty input exits, any other key silently returns to the normal calculator and applies as usual.
+- PIN errors stay calculator-styled: wrong PIN shows `Error`; after 3 failures the display counts down a 30 s cooldown as a plain number.
 - Repeat equals: pressing `=` repeatedly repeats the last operation (e.g., `2+3==` -> `8`, `11`).
 - Percent key was replaced by the +/- sign toggle; there is no `%` operation.
-
-## Next Steps
-- Clarify current project state (what already exists, if any code/screens are present).
-- Decide MVP features: basic operations (+, -, *, /), clear, backspace, decimal, sign toggle.
-- Set up UI layout and wire up basic logic.
-- Run on emulator and iterate.
