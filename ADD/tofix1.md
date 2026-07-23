@@ -27,7 +27,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 7. **PIN rate-limiting exists only in Compose state and resets trivially. — FIXED**
    In `PinScreen.kt`, `failCount` and `cooldownUntil` live in `remember { ... }`. Leaving the vault (back) and long-pressing back in resets the counter, so the 30-second cooldown after 3 failures is bypassable with zero cost. Fix: persist fail count and cooldown deadline in `PinManager` (EncryptedSharedPreferences) so they survive recomposition and process restart.
 
-8. **PIN hash comparison is not constant-time.**
+8. **PIN hash comparison is not constant-time. — FIXED**
    `PinManager.verifyPin()` compares hashes with `hash.toHex() == storedHash` (short-circuiting String equals). Low practical risk for a local PIN, but the fix is one line: use `MessageDigest.isEqual(hash, storedHash.fromHex())`.
 
 ## Medium — logic bugs

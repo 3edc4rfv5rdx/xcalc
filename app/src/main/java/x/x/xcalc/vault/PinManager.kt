@@ -3,6 +3,7 @@ package x.x.xcalc.vault
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
@@ -71,7 +72,7 @@ class PinManager(context: Context) {
         val storedHash = prefs.getString(KEY_PIN_HASH, null) ?: return false
         val salt = prefs.getString(KEY_PIN_SALT, null)?.fromHex() ?: return false
         val hash = hashPin(pin, salt)
-        return hash.toHex() == storedHash
+        return MessageDigest.isEqual(hash, storedHash.fromHex())
     }
 
     private fun hashPin(pin: String, salt: ByteArray): ByteArray {

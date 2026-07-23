@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Use constant-time comparison for PIN hash verification
 - E Persist PIN fail count and cooldown so retry limit survives restarts
 - E Delete partially written destination file when vault export fails
 - E Sweep leftover decrypted temp files when opening the vault
