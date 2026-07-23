@@ -41,7 +41,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 11. **FIXED — Long-pressing `=` to open the vault also fires the tap handler on release.**
     In `MainActivity.CalcButtonView`, the `=` button uses `detectTapGestures(onTap = ..., onPress = { delay(5000) → onLongPress() })`. Holding 5 s opens the vault, but releasing the finger then triggers `onTap` → `engine.pressButton("=")`, silently mutating calculator state behind the vault screen. Fix: track that the long-press fired (e.g., a flag set in the delayed job) and suppress the subsequent tap; or use `awaitEachGesture` with explicit consumption.
 
-12. **`createFolder` never checks existence — duplicate `.folder` markers accumulate.**
+12. **FIXED — `createFolder` never checks existence — duplicate `.folder` markers accumulate.**
     `VaultRepository.createFolder()` always appends a new marker entry. Creating a folder whose name already exists (or re-importing the same folder tree — `importFolder`/`importDocumentRecursive` call `createFolder` for every directory) adds duplicate metadata rows forever. UI dedups via a set, but metadata grows unboundedly and semantics are unclean. Fix: return early if a marker (or any entry) with that `relativePath` already exists.
 
 13. **`importFolder` builds paths from the unsanitized name while `createFolder` sanitizes it.**

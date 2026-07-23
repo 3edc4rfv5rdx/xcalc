@@ -118,6 +118,11 @@ class VaultRepository(private val context: Context) {
         val sanitized = sanitizeName(name)
         require(sanitized.isNotEmpty()) { "Invalid folder name" }
         val folderPath = if (parentPath.isEmpty()) sanitized else "$parentPath/$sanitized"
+        val list = mutableMetadata()
+        // Already exists (marker, contained file, or subfolder) — no-op.
+        if (list.any { it.relativePath == folderPath || it.relativePath.startsWith("$folderPath/") }) {
+            return folderPath
+        }
         // Create a hidden marker file to persist the folder
         val marker = VaultFileMetadata(
             name = ".folder",
@@ -125,7 +130,6 @@ class VaultRepository(private val context: Context) {
             mimeType = "inode/directory",
             size = 0
         )
-        val list = mutableMetadata()
         list.add(marker)
         metadataCache = list
         saveMetadata()
