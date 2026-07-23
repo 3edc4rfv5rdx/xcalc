@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- N Add back arrow button to the PIN screen
 - E Close vault back to the calculator when the app goes to background
 - E Hide vault screens from screenshots and recents preview with FLAG_SECURE
 - I Drop debug build scripts, applicationId suffix and debug icon, test with release builds only
