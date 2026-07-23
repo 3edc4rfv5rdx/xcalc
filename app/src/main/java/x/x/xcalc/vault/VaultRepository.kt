@@ -71,13 +71,30 @@ class VaultRepository(private val context: Context) {
             sane
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load metadata", e)
-            // Preserve the unreadable file so a later save cannot destroy
-            // the only copy of the vault index.
-            val backup = File(vaultDir, "metadata.enc.corrupt-${System.currentTimeMillis()}")
-            metadataFile.copyTo(backup, overwrite = true)
+            backupCorruptMetadata()
             mutableListOf()
         }
         return metadataCache!!
+    }
+
+    // Preserve the unreadable index so a later save cannot destroy its only
+    // copy. Identical content is backed up once, not on every launch, and a
+    // backup failure (e.g. disk full) must not turn a degraded load into a
+    // crash.
+    private fun backupCorruptMetadata() {
+        try {
+            val current = metadataFile.readBytes()
+            val duplicate = vaultDir.listFiles()?.any {
+                it.name.startsWith("metadata.enc.corrupt-") &&
+                    it.length() == current.size.toLong() &&
+                    it.readBytes().contentEquals(current)
+            } == true
+            if (duplicate) return
+            File(vaultDir, "metadata.enc.corrupt-${System.currentTimeMillis()}")
+                .writeBytes(current)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to back up corrupt metadata", e)
+        }
     }
 
     // Release builds shipped before the VaultFileMetadata proguard keep rule
