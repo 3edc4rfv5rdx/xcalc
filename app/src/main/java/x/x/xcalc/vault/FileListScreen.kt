@@ -1,6 +1,7 @@
 package x.x.xcalc.vault
 
 import android.content.Intent
+import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -73,7 +74,9 @@ import androidx.core.content.FileProvider
 import x.x.xcalc.ui.theme.FolderIconColor
 import x.x.xcalc.ui.theme.VaultAccent
 import x.x.xcalc.ui.theme.VaultAccentContent
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -135,16 +138,28 @@ fun FileListScreen(
     val menuContainerColor = VaultAccent
     val menuContentColor = VaultAccentContent
 
+    // Runs on IO in a scope that survives leaving this screen: persisting
+    // happens during teardown and must not block the UI thread.
+    val persistScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+
     fun persistViewedTemps() {
-        viewedTemps.forEach { viewed ->
-            if (!viewed.tempFile.exists()) return@forEach
-            val newCrc = fileCrc32(viewed.tempFile)
-            if (newCrc != viewed.initialCrc) {
-                repository.reEncryptFromTemp(viewed.metadata, viewed.tempFile)
-            }
-            viewed.tempFile.delete()
-        }
+        val toPersist = viewedTemps.toList()
         viewedTemps.clear()
+        if (toPersist.isEmpty()) return
+        persistScope.launch {
+            toPersist.forEach { viewed ->
+                try {
+                    if (!viewed.tempFile.exists()) return@forEach
+                    val newCrc = fileCrc32(viewed.tempFile)
+                    if (newCrc != viewed.initialCrc) {
+                        repository.reEncryptFromTemp(viewed.metadata, viewed.tempFile)
+                    }
+                    viewed.tempFile.delete()
+                } catch (e: Exception) {
+                    Log.e("FileListScreen", "Failed to persist ${viewed.metadata.id}", e)
+                }
+            }
+        }
     }
 
     fun refreshItems() {

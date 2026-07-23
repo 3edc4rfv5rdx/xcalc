@@ -53,7 +53,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 15. **FIXED — Folder move/rename does not handle path collisions — silent merge.**
     `VaultRepository.moveFolder()` and `renameFolder()` remap paths without checking whether the target path already exists. Moving/renaming folder `A` where `parent/A` already exists silently merges the contents of two folders (and leaves duplicate `.folder` markers), which is irreversible. Fix: detect the collision and reject (return false) or auto-rename, and surface it in the UI.
 
-16. **`persistViewedTemps` does file CRC32 + full re-encryption on the main thread.**
+16. **FIXED — `persistViewedTemps` does file CRC32 + full re-encryption on the main thread.**
     In `FileListScreen.kt`, `persistViewedTemps()` is called from `onDispose` and `handleBack()` on the UI thread; for a large edited file this means synchronous hashing plus encryption → frozen UI / ANR. Fix: run the persist work on `Dispatchers.IO` (e.g., via a non-cancellable scope since it runs during teardown).
 
 17. **No system back handling in the vault — hardware/gesture back exits the whole app.**
