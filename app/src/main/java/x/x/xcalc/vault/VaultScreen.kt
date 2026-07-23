@@ -33,10 +33,12 @@ fun VaultScreen(onBack: () -> Unit, onExternalView: () -> Unit) {
         pinManager = pm
         state = if (pm.hasPin) VaultState.PIN_UNLOCK else VaultState.PIN_SETUP
         // Sweep decrypted temp files left over from a previous process
-        // (e.g. it was killed while an external viewer was open). Once per
-        // process — see sweepTempOnce.
+        // (e.g. it was killed while an external viewer was open) and
+        // orphaned encrypted blobs. Once per process each; the orphan sweep
+        // also pre-warms the metadata cache off the main thread.
         withContext(Dispatchers.IO) {
             repository.sweepTempOnce()
+            repository.sweepOrphansOnce()
         }
     }
 

@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Sweep orphaned encrypted blobs on vault open after a clean index load
 - E Synchronize keystore key creation so concurrent first use cannot generate it twice
 - E Recreate empty folders when exporting a folder or the whole vault
 - E Fsync the vault index temp file before the atomic rename so power loss cannot truncate it

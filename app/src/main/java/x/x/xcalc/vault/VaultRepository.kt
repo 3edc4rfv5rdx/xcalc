@@ -43,6 +43,11 @@ class VaultRepository(private val context: Context) {
 
     private var metadataCache: MutableList<VaultFileMetadata>? = null
 
+    // True only when the last metadata load parsed cleanly and sanitize
+    // dropped nothing. Guards the orphan sweep: a degraded load must never
+    // make real files look like orphans.
+    private var lastLoadClean = false
+
     // Returns a defensive copy: the internal cache is mutated under
     // @Synchronized while callers may iterate on another thread.
     @Synchronized
@@ -60,7 +65,10 @@ class VaultRepository(private val context: Context) {
             val migrated = remapLegacyKeys(json) ?: json
             val type = object : TypeToken<List<VaultFileMetadata>>() {}.type
             val list: List<VaultFileMetadata>? = gson.fromJson(migrated, type)
-            sanitizeLoaded(list ?: emptyList())
+            val parsed = list ?: emptyList()
+            val sane = sanitizeLoaded(parsed)
+            lastLoadClean = sane.size == parsed.size
+            sane
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load metadata", e)
             // Preserve the unreadable file so a later save cannot destroy
@@ -496,6 +504,27 @@ class VaultRepository(private val context: Context) {
         if (tempSweepDone) return
         tempSweepDone = true
         tempDir.listFiles()?.forEach { it.delete() }
+    }
+
+    private var orphanSweepDone = false
+
+    // Delete encrypted blobs no metadata entry references — leftovers of a
+    // crash between writing the blob and saving the index. Runs once per
+    // process and only after a fully clean index load: a failed or degraded
+    // load must never make real files look like orphans.
+    @Synchronized
+    fun sweepOrphansOnce() {
+        if (orphanSweepDone) return
+        if (!metadataFile.exists()) return
+        val ids = mutableMetadata().map { it.id }.toSet()
+        if (!lastLoadClean) return
+        orphanSweepDone = true
+        filesDir.listFiles()?.forEach { file ->
+            val id = file.name.removeSuffix(".enc")
+            if (id != file.name && id !in ids) {
+                file.delete()
+            }
+        }
     }
 
     private fun uniqueDocumentFile(dir: DocumentFile, name: String, mimeType: String): DocumentFile? {

@@ -31,7 +31,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 7. **FIXED — `CryptoManager.getOrCreateKey()` is not synchronized — concurrent first use could generate the key twice.**
    Two threads hitting the keystore before the alias exists would each call `generateKey()`; the second generation replaces the first key, making anything encrypted moments earlier with the first key permanently undecryptable. Today the call sites are effectively serialized (repository methods are `@Synchronized`), so this is latent, but it is one `@Synchronized` away from safe. Fix: make `getOrCreateKey` (or the whole object's key access) synchronized.
 
-8. **Orphaned `.enc` blobs are never cleaned up.**
+8. **FIXED — Orphaned `.enc` blobs are never cleaned up.**
    `importFile` writes `${id}.enc` and only then updates metadata; a crash or process kill between the two leaves an encrypted blob that no metadata entry references — invisible in the UI and kept forever (wasted space, "ghost" content on disk). Fix: on vault open (e.g. after successful metadata load in `VaultScreen`), list `files/` and delete `.enc` files whose id is not present in metadata. Guard carefully: run the sweep only when metadata loaded successfully and non-defensively (never after a load failure or when the index came back empty due to an error), otherwise a transient load problem would delete all real data.
 
 9. **`androidx.security:security-crypto` is deprecated and pinned to an alpha.**
