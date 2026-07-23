@@ -45,6 +45,7 @@ enum class PinMode { SETUP, CONFIRM, UNLOCK }
 @Composable
 fun PinScreen(
     isSetup: Boolean,
+    pinManager: PinManager,
     onPinComplete: (String) -> Boolean,
     onBack: () -> Unit
 ) {
@@ -52,8 +53,7 @@ fun PinScreen(
     var firstPin by remember { mutableStateOf("") }
     var mode by remember { mutableStateOf(if (isSetup) PinMode.SETUP else PinMode.UNLOCK) }
     var error by remember { mutableStateOf("") }
-    var failCount by remember { mutableIntStateOf(0) }
-    var cooldownUntil by remember { mutableLongStateOf(0L) }
+    var cooldownUntil by remember { mutableLongStateOf(pinManager.cooldownUntil) }
     var cooldownRemaining by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(cooldownUntil) {
@@ -110,14 +110,10 @@ fun PinScreen(
                 if (onPinComplete(pin)) {
                     // success
                 } else {
-                    failCount++
-                    error = "Wrong PIN"
+                    pinManager.registerFailedAttempt()
                     pin = ""
-                    if (failCount >= 3) {
-                        cooldownUntil = System.currentTimeMillis() + 30_000
-                        failCount = 0
-                        error = ""
-                    }
+                    cooldownUntil = pinManager.cooldownUntil
+                    error = if (System.currentTimeMillis() < cooldownUntil) "" else "Wrong PIN"
                 }
             }
         }

@@ -24,7 +24,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 6. **Failed export leaves a partial plaintext file in the destination. — FIXED**
    In `VaultRepository.exportFileToTree()`, if `CryptoManager.decrypt` throws (corrupt data, GCM tag mismatch), the method returns false but the already-created `outDoc` with partially written unauthenticated plaintext remains in the user's chosen folder. Fix: delete `outDoc` in the catch branch before returning false.
 
-7. **PIN rate-limiting exists only in Compose state and resets trivially.**
+7. **PIN rate-limiting exists only in Compose state and resets trivially. — FIXED**
    In `PinScreen.kt`, `failCount` and `cooldownUntil` live in `remember { ... }`. Leaving the vault (back) and long-pressing back in resets the counter, so the 30-second cooldown after 3 failures is bypassable with zero cost. Fix: persist fail count and cooldown deadline in `PinManager` (EncryptedSharedPreferences) so they survive recomposition and process restart.
 
 8. **PIN hash comparison is not constant-time.**

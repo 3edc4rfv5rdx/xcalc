@@ -36,6 +36,7 @@ fun VaultScreen(onBack: () -> Unit) {
         VaultState.PIN_SETUP -> {
             PinScreen(
                 isSetup = true,
+                pinManager = pinManager,
                 onPinComplete = { pin ->
                     pinManager.setupPin(pin)
                     state = VaultState.FILE_LIST
@@ -47,9 +48,13 @@ fun VaultScreen(onBack: () -> Unit) {
         VaultState.PIN_UNLOCK -> {
             PinScreen(
                 isSetup = false,
+                pinManager = pinManager,
                 onPinComplete = { pin ->
                     val ok = pinManager.verifyPin(pin)
-                    if (ok) state = VaultState.FILE_LIST
+                    if (ok) {
+                        pinManager.clearFailures()
+                        state = VaultState.FILE_LIST
+                    }
                     ok
                 },
                 onBack = onBack
