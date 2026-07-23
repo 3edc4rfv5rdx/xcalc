@@ -607,7 +607,9 @@ fun FileListScreen(
                 if (newName.isNotBlank()) {
                     when (val t = renameTarget) {
                         is VaultFileMetadata -> repository.renameFile(t, newName.trim())
-                        is String -> repository.renameFolder(t, newName.trim())
+                        is String -> if (!repository.renameFolder(t, newName.trim())) {
+                            Toast.makeText(context, "Folder already exists", Toast.LENGTH_SHORT).show()
+                        }
                     }
                     refreshItems()
                     selected.clear()

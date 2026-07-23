@@ -50,7 +50,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 14. **FIXED — Imported file names are not sanitized.**
     `VaultRepository.importFile()` stores `displayName` (or `uri.lastPathSegment`) as-is, while `renameFile` applies `sanitizeName`. A name containing `/` breaks `fullPath` semantics and makes export path/`createFile` behave incorrectly. Fix: run the display name through `sanitizeName()` on import (fallback to "unknown" if empty).
 
-15. **Folder move/rename does not handle path collisions — silent merge.**
+15. **FIXED — Folder move/rename does not handle path collisions — silent merge.**
     `VaultRepository.moveFolder()` and `renameFolder()` remap paths without checking whether the target path already exists. Moving/renaming folder `A` where `parent/A` already exists silently merges the contents of two folders (and leaves duplicate `.folder` markers), which is irreversible. Fix: detect the collision and reject (return false) or auto-rename, and surface it in the UI.
 
 16. **`persistViewedTemps` does file CRC32 + full re-encryption on the main thread.**

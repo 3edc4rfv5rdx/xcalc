@@ -358,6 +358,8 @@ class VaultRepository(private val context: Context) {
         val folderName = oldPath.substringAfterLast("/")
         val newPath = if (targetParentPath.isEmpty()) folderName else "$targetParentPath/$folderName"
         if (newPath == oldPath) return false
+        // Refuse to silently merge into an existing folder.
+        if (folderExists(newPath)) return false
 
         remapFolderPaths(oldPath, newPath)
         return true
@@ -377,14 +379,24 @@ class VaultRepository(private val context: Context) {
     }
 
     @Synchronized
-    fun renameFolder(oldPath: String, newName: String) {
+    fun renameFolder(oldPath: String, newName: String): Boolean {
         val sanitized = sanitizeName(newName)
-        if (sanitized.isEmpty()) return
+        if (sanitized.isEmpty()) return false
         val parts = oldPath.split("/")
         val parentPath = parts.dropLast(1).joinToString("/")
         val newPath = if (parentPath.isEmpty()) sanitized else "$parentPath/$sanitized"
+        if (newPath == oldPath) return true
+        // Refuse to silently merge into an existing folder.
+        if (folderExists(newPath)) return false
 
         remapFolderPaths(oldPath, newPath)
+        return true
+    }
+
+    private fun folderExists(path: String): Boolean {
+        return mutableMetadata().any {
+            it.relativePath == path || it.relativePath.startsWith("$path/")
+        }
     }
 
     private fun remapFolderPaths(oldPath: String, newPath: String) {

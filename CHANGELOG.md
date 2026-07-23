@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Reject folder move or rename that would merge into an existing folder
 - E Sanitize imported file names like renamed ones
 - E Sanitize folder names once during tree import to keep paths consistent
 - E Skip creating duplicate folder markers for existing paths
