@@ -9,7 +9,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## High — security
 
-2. **The one-shot external-viewer exemption leaves the vault unlocked indefinitely when the user leaves the viewer via Home.**
+2. **FIXED — The one-shot external-viewer exemption leaves the vault unlocked indefinitely when the user leaves the viewer via Home.**
    In `MainActivity` the `ON_STOP` observer closes the vault unless `externalViewActive` is set, which is consumed by the stop caused by launching the viewer. But after that exempted stop the activity stays stopped: if the user presses Home (or switches apps) from inside the external viewer and returns to the launcher, no further `ON_STOP` ever fires, `showVault` remains true, and reopening xcalc hours later lands directly in the unlocked file list — no PIN. Fix: record the timestamp when the exempted stop happens and, on `ON_START`, close the vault if more than a short grace period (e.g. 60 s) has elapsed since then; alternatively re-lock on `ON_START` whenever the exemption was used and the temp-file viewer intent has finished. Keep the normal path (view file, return within seconds) working without re-asking the PIN.
 
 ## Medium — performance / logic

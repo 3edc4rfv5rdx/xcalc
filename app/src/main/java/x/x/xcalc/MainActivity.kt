@@ -1,6 +1,7 @@
 package x.x.xcalc
 
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,6 +33,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -80,6 +82,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+// Coming back from an external viewer later than this relocks the vault.
+private const val EXTERNAL_VIEW_RELOCK_MS = 60_000L
 
 private data class CalcButton(
     val label: String,
@@ -171,16 +176,34 @@ fun CalculatorScreen() {
         // external viewer from the vault is exempted once, or the viewer
         // would lose its temp file and the user their place.
         val externalViewActive = remember { mutableStateOf(false) }
+        // Set at the exempted stop: lifecycle alone cannot tell "came back
+        // from the viewer" apart from "left the viewer via Home and reopened
+        // the app later", so on ON_START relock unless the return was quick.
+        val externalViewStopTime = remember { mutableLongStateOf(0L) }
         DisposableEffect(activity) {
             if (activity == null) return@DisposableEffect onDispose { }
             val observer = LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_STOP) {
-                    if (externalViewActive.value) {
-                        externalViewActive.value = false
-                    } else {
-                        showVault.value = false
-                        backspaceTapCount = 0
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> {
+                        if (externalViewActive.value) {
+                            externalViewActive.value = false
+                            externalViewStopTime.longValue = SystemClock.elapsedRealtime()
+                        } else {
+                            showVault.value = false
+                            backspaceTapCount = 0
+                        }
                     }
+                    Lifecycle.Event.ON_START -> {
+                        if (externalViewStopTime.longValue > 0) {
+                            val elapsed = SystemClock.elapsedRealtime() - externalViewStopTime.longValue
+                            externalViewStopTime.longValue = 0
+                            if (elapsed > EXTERNAL_VIEW_RELOCK_MS) {
+                                showVault.value = false
+                                backspaceTapCount = 0
+                            }
+                        }
+                    }
+                    else -> {}
                 }
             }
             activity.lifecycle.addObserver(observer)
