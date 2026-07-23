@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- N Enter the PIN on the calculator keypad itself instead of a separate PIN screen: orange display digits hint the mode, zeros mask the PIN, setup shows real digits, Error and countdown stay calculator-styled
 - E Run instrumentation tests against isolated vault and PIN storage so they cannot wipe real data
 - E Fix repository tests that mutated the defensive metadata copy instead of the vault index
 - R Delete selected folders in one batch with a single index save

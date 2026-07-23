@@ -20,5 +20,9 @@ val OperatorButtonContent = Color(0xFF000000)
 val VaultAccent = Color(0xFF22B2D6)
 val VaultAccentContent = Color.Black
 
+// PIN-entry mode: the display value turns this color as the only mode hint.
+// Orange: yellow was unreadable on the light theme display.
+val PinModeDisplay = Color(0xFFFF9800)
+
 // File list
 val FolderIconColor = Color(0xFFFFB74D)

@@ -6,15 +6,6 @@
     <string name="back">Back</string>
     <string name="backspace">Backspace</string>
 
-    <string name="pin_set">Set PIN</string>
-    <string name="pin_confirm">Confirm PIN</string>
-    <string name="pin_enter">Enter PIN</string>
-    <string name="pin_min_digits">Min 4 digits</string>
-    <string name="pin_error">Error</string>
-    <string name="pin_mismatch">PIN mismatch</string>
-    <string name="pin_wrong">Wrong PIN</string>
-    <string name="pin_wait">Wait %1$ds</string>
-
     <string name="vault_title">Vault</string>
     <string name="empty">Empty</string>
     <string name="view">View</string>

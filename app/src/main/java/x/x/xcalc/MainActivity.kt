@@ -62,12 +62,14 @@ import x.x.xcalc.ui.theme.DigitButton
 import x.x.xcalc.ui.theme.DigitButtonContent
 import x.x.xcalc.ui.theme.OperatorButton
 import x.x.xcalc.ui.theme.OperatorButtonContent
+import x.x.xcalc.ui.theme.PinModeDisplay
 import x.x.xcalc.ui.theme.XcalcTheme
 import x.x.xcalc.vault.PinManager
 import x.x.xcalc.vault.VaultScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,6 +88,13 @@ class MainActivity : ComponentActivity() {
 // Coming back from an external activity (viewer, SAF picker) later than
 // this relocks the vault.
 private const val EXTERNAL_ACTIVITY_RELOCK_MS = 60_000L
+
+private const val PIN_MIN_LENGTH = 4
+private const val PIN_MAX_LENGTH = 8
+
+// PIN entry happens on the calculator keypad itself — no separate screen
+// that would give the vault away. The only mode hint is the display color.
+private enum class PinStage { UNLOCK, SETUP, CONFIRM }
 
 private data class CalcButton(
     val label: String,
@@ -109,6 +118,125 @@ fun CalculatorScreen() {
     fun syncState() {
         currentInput = engine.currentInput
         history = engine.history.toList()
+    }
+
+    // PIN entry state: the calculator keypad doubles as the PIN pad.
+    var pinMode by remember { mutableStateOf(false) }
+    var pinStage by remember { mutableStateOf<PinStage?>(null) }
+    var pinBuffer by remember { mutableStateOf("") }
+    var pinFirst by remember { mutableStateOf("") }
+    // Blocks input while the PBKDF2 hash runs in the background.
+    var pinBusy by remember { mutableStateOf(false) }
+    var pinError by remember { mutableStateOf(false) }
+    var pinCooldownUntil by remember { mutableLongStateOf(0L) }
+    var pinCooldownRemaining by remember { mutableIntStateOf(0) }
+
+    fun exitPinMode() {
+        pinMode = false
+        pinStage = null
+        pinBuffer = ""
+        pinFirst = ""
+        pinBusy = false
+        pinError = false
+        pinCooldownUntil = 0
+        pinCooldownRemaining = 0
+    }
+
+    LaunchedEffect(pinCooldownUntil) {
+        if (pinCooldownUntil > 0) {
+            while (System.currentTimeMillis() < pinCooldownUntil) {
+                pinCooldownRemaining =
+                    ((pinCooldownUntil - System.currentTimeMillis()) / 1000).toInt() + 1
+                delay(1000)
+            }
+            pinCooldownRemaining = 0
+            pinCooldownUntil = 0
+        }
+    }
+
+    fun submitPin() {
+        val stage = pinStage ?: return
+        if (pinBuffer.length < PIN_MIN_LENGTH) {
+            pinError = true
+            pinBuffer = ""
+            return
+        }
+        when (stage) {
+            PinStage.SETUP -> {
+                pinFirst = pinBuffer
+                pinBuffer = ""
+                pinStage = PinStage.CONFIRM
+            }
+            PinStage.CONFIRM -> {
+                if (pinBuffer == pinFirst) {
+                    val pin = pinBuffer
+                    scope.launch {
+                        pinBusy = true
+                        // PBKDF2 is CPU-heavy; keep it off the main thread.
+                        withContext(Dispatchers.Default) {
+                            PinManager.getInstance(context).setupPin(pin)
+                        }
+                        exitPinMode()
+                        showVault.value = true
+                    }
+                } else {
+                    pinError = true
+                    pinBuffer = ""
+                    pinFirst = ""
+                    pinStage = PinStage.SETUP
+                }
+            }
+            PinStage.UNLOCK -> {
+                val pin = pinBuffer
+                scope.launch {
+                    pinBusy = true
+                    // Instance is already cached from entering PIN mode.
+                    val pm = PinManager.getInstance(context)
+                    // PBKDF2 is CPU-heavy; keep it off the main thread.
+                    val ok = withContext(Dispatchers.Default) { pm.verifyPin(pin) }
+                    if (ok) {
+                        withContext(Dispatchers.IO) { pm.clearFailures() }
+                        exitPinMode()
+                        showVault.value = true
+                    } else {
+                        // Synchronous prefs write — keep it off the main thread.
+                        withContext(Dispatchers.IO) { pm.registerFailedAttempt() }
+                        pinBuffer = ""
+                        pinBusy = false
+                        pinCooldownUntil = pm.cooldownUntil
+                        // Cooldown countdown replaces the error display.
+                        pinError = System.currentTimeMillis() >= pinCooldownUntil
+                    }
+                }
+            }
+        }
+    }
+
+    fun pressPinKey(button: CalcButton) {
+        if (pinBusy) return
+        when {
+            button.icon != null -> {
+                // Backspace: delete one PIN digit, leave on an empty buffer.
+                if (pinBuffer.isEmpty()) exitPinMode()
+                else pinBuffer = pinBuffer.dropLast(1)
+            }
+            button.label == "=" -> {
+                if (pinCooldownRemaining == 0) submitPin()
+            }
+            button.label.all { it.isDigit() } -> {
+                if (pinCooldownRemaining == 0 && pinBuffer.length < PIN_MAX_LENGTH) {
+                    pinError = false
+                    pinBuffer += button.label
+                }
+            }
+            else -> {
+                // Any other key drops back to the plain calculator and
+                // applies normally, keeping the disguise.
+                exitPinMode()
+                engine.pressButton(button.label)
+                syncState()
+            }
+        }
     }
 
     val rows = listOf(
@@ -162,9 +290,10 @@ fun CalculatorScreen() {
         )
     }
 
-    if (showVault.value) {
-        // Block screenshots and the recents preview while the vault is
-        // visible; the calculator itself stays capturable to keep the disguise.
+    if (showVault.value || pinMode) {
+        // Block screenshots and the recents preview while the vault or PIN
+        // entry is visible; the plain calculator stays capturable to keep
+        // the disguise.
         val activity = LocalContext.current as? ComponentActivity
         DisposableEffect(Unit) {
             activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -172,11 +301,11 @@ fun CalculatorScreen() {
                 activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
-        // Close the vault whenever the app is backgrounded so reopening from
-        // recents lands on the calculator. A stop caused by launching an
-        // external activity from the vault (viewer, SAF picker) is exempted
-        // once, or the viewer would lose its temp file, and pickers their
-        // pending import/export.
+        // Close the vault (and abandon PIN entry) whenever the app is
+        // backgrounded so reopening from recents lands on the calculator.
+        // A stop caused by launching an external activity from the vault
+        // (viewer, SAF picker) is exempted once, or the viewer would lose
+        // its temp file, and pickers their pending import/export.
         val externalActivityActive = remember { mutableStateOf(false) }
         // Set at the exempted stop: lifecycle alone cannot tell "came back
         // from the external activity" apart from "left it via Home and
@@ -193,6 +322,7 @@ fun CalculatorScreen() {
                             externalActivityStopTime.longValue = SystemClock.elapsedRealtime()
                         } else {
                             showVault.value = false
+                            exitPinMode()
                             backspaceTapCount = 0
                         }
                     }
@@ -202,6 +332,7 @@ fun CalculatorScreen() {
                             externalActivityStopTime.longValue = 0
                             if (elapsed > EXTERNAL_ACTIVITY_RELOCK_MS) {
                                 showVault.value = false
+                                exitPinMode()
                                 backspaceTapCount = 0
                             }
                         }
@@ -212,14 +343,16 @@ fun CalculatorScreen() {
             activity.lifecycle.addObserver(observer)
             onDispose { activity.lifecycle.removeObserver(observer) }
         }
-        VaultScreen(
-            onBack = {
-                showVault.value = false
-                backspaceTapCount = 0
-            },
-            onExternalActivity = { externalActivityActive.value = true }
-        )
-        return
+        if (showVault.value) {
+            VaultScreen(
+                onBack = {
+                    showVault.value = false
+                    backspaceTapCount = 0
+                },
+                onExternalActivity = { externalActivityActive.value = true }
+            )
+            return
+        }
     }
 
     Column(
@@ -228,9 +361,22 @@ fun CalculatorScreen() {
             .padding(16.dp),
         verticalArrangement = Arrangement.Bottom
     ) {
+        // In PIN mode the display shows the cooldown countdown, "Error", the
+        // real digits during first-time setup (a one-off private flow), or
+        // one zero per typed digit on unlock. The yellow value color is the
+        // only hint that the calculator is in PIN mode.
+        val pinDisplayValue = when {
+            pinCooldownRemaining > 0 -> pinCooldownRemaining.toString()
+            pinError -> "Error"
+            pinStage == PinStage.SETUP || pinStage == PinStage.CONFIRM ->
+                pinBuffer.ifEmpty { "0" }
+            else -> "0".repeat(pinBuffer.length).ifEmpty { "0" }
+        }
         DisplayArea(
-            value = currentInput,
+            value = if (pinMode) pinDisplayValue else currentInput,
             history = history,
+            valueColor = if (pinMode) PinModeDisplay
+            else MaterialTheme.colorScheme.onSurfaceVariant,
             onLongPress = { showAbout = true },
             modifier = Modifier
                 .fillMaxWidth()
@@ -252,21 +398,25 @@ fun CalculatorScreen() {
                 ) {
                     row.forEach { button ->
                         val onPress: () -> Unit = {
-                            if (button.icon != null) {
-                                backspaceTapCount = (backspaceTapCount + 1).coerceAtMost(2)
-                                if (backspaceTapCount == 2) {
-                                    // Warm the slow PinManager init during the
-                                    // upcoming "=" hold so the PIN screen shows
-                                    // right when the long-press fires.
-                                    scope.launch(Dispatchers.IO) {
-                                        PinManager.getInstance(context)
+                            if (pinMode) {
+                                pressPinKey(button)
+                            } else {
+                                if (button.icon != null) {
+                                    backspaceTapCount = (backspaceTapCount + 1).coerceAtMost(2)
+                                    if (backspaceTapCount == 2) {
+                                        // Warm the slow PinManager init during
+                                        // the upcoming "=" hold so PIN entry
+                                        // starts right when the long-press fires.
+                                        scope.launch(Dispatchers.IO) {
+                                            PinManager.getInstance(context)
+                                        }
                                     }
+                                } else if (button.label != "backspace") {
+                                    backspaceTapCount = 0
                                 }
-                            } else if (button.label != "backspace") {
-                                backspaceTapCount = 0
+                                engine.pressButton(button.label)
+                                syncState()
                             }
-                            engine.pressButton(button.label)
-                            syncState()
                         }
                         CalcButtonView(
                             modifier = Modifier
@@ -276,9 +426,17 @@ fun CalculatorScreen() {
                             onClick = onPress,
                             onLongPress = if (button.label == "=") {
                                 {
-                                    if (backspaceTapCount >= 2) {
-                                        showVault.value = true
+                                    if (!pinMode && backspaceTapCount >= 2) {
                                         backspaceTapCount = 0
+                                        pinMode = true
+                                        scope.launch {
+                                            val pm = withContext(Dispatchers.IO) {
+                                                PinManager.getInstance(context)
+                                            }
+                                            pinStage =
+                                                if (pm.hasPin) PinStage.UNLOCK else PinStage.SETUP
+                                            pinCooldownUntil = pm.cooldownUntil
+                                        }
                                     }
                                 }
                             } else null
@@ -298,6 +456,7 @@ fun CalculatorScreen() {
 private fun DisplayArea(
     value: String,
     history: List<String>,
+    valueColor: Color,
     onLongPress: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -350,7 +509,7 @@ private fun DisplayArea(
                 style = baseStyle,
                 fontSize = baseStyle.fontSize * fontScale,
                 textAlign = TextAlign.End,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = valueColor,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Clip,
