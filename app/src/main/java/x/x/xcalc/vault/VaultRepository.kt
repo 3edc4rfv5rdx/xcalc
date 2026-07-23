@@ -51,7 +51,16 @@ class VaultRepository(private val context: Context) {
     private fun saveMetadata() {
         val json = gson.toJson(metadataCache ?: return)
         val encrypted = CryptoManager.encryptBytes(json.toByteArray())
-        metadataFile.writeBytes(encrypted)
+        // Write to a temp file first, then rename atomically so a crash
+        // mid-write cannot corrupt the live metadata file.
+        val tmpFile = File(vaultDir, "metadata.enc.tmp")
+        tmpFile.writeBytes(encrypted)
+        if (!tmpFile.renameTo(metadataFile)) {
+            metadataFile.delete()
+            if (!tmpFile.renameTo(metadataFile)) {
+                throw java.io.IOException("Failed to replace metadata file")
+            }
+        }
     }
 
     fun getFilesInFolder(folderPath: String): List<VaultFileMetadata> {

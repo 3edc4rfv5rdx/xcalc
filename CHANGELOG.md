@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Write vault metadata atomically via temp file and rename
 - E Preserve edited vault temp files when leaving the vault screen
 - E Switch vault export to SAF destination folders for modern Android
 - E Use BigDecimal calculator math to avoid floating-point display artifacts
