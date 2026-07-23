@@ -1,6 +1,8 @@
 package x.x.xcalc
 
+import android.app.Activity
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -146,6 +150,15 @@ fun CalculatorScreen() {
     }
 
     if (showVault.value) {
+        // Block screenshots and the recents preview while the vault is
+        // visible; the calculator itself stays capturable to keep the disguise.
+        val activity = LocalContext.current as? Activity
+        DisposableEffect(Unit) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            onDispose {
+                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        }
         VaultScreen(onBack = {
             showVault.value = false
             backspaceTapCount = 0
