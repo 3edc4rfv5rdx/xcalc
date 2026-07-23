@@ -275,13 +275,18 @@ class VaultRepository(private val context: Context) {
         val outDoc = uniqueDocumentFile(destDir, metadata.name, metadata.mimeType) ?: return false
         return try {
             encFile.inputStream().use { input ->
-                context.contentResolver.openOutputStream(outDoc.uri)?.use { output ->
-                    CryptoManager.decrypt(input, output)
-                } ?: return false
+                val output = context.contentResolver.openOutputStream(outDoc.uri)
+                if (output == null) {
+                    outDoc.delete()
+                    return false
+                }
+                output.use { CryptoManager.decrypt(input, it) }
             }
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to export file ${metadata.id}", e)
+            // Remove the partially written destination file.
+            outDoc.delete()
             false
         }
     }

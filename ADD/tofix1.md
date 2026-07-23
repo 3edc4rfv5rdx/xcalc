@@ -21,7 +21,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 5. **Decrypted temp files can persist in cache indefinitely; `clearTemp()` is never called. — FIXED**
    `VaultRepository.decryptToTemp()` writes plaintext into `cacheDir/vault_temp`. Cleanup relies solely on `persistViewedTemps()` running in `FileListScreen`'s `onDispose`. If the process is killed while an external viewer is open (common, since viewing launches another app), plaintext survives across restarts. `VaultRepository.clearTemp()` exists but has zero call sites. Fix: call `clearTemp()` when the vault opens (e.g., in `VaultScreen` init or on PIN unlock) to sweep leftovers from previous sessions.
 
-6. **Failed export leaves a partial plaintext file in the destination.**
+6. **Failed export leaves a partial plaintext file in the destination. — FIXED**
    In `VaultRepository.exportFileToTree()`, if `CryptoManager.decrypt` throws (corrupt data, GCM tag mismatch), the method returns false but the already-created `outDoc` with partially written unauthenticated plaintext remains in the user's chosen folder. Fix: delete `outDoc` in the catch branch before returning false.
 
 7. **PIN rate-limiting exists only in Compose state and resets trivially.**
