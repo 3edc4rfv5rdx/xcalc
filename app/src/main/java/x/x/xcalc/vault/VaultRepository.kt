@@ -332,18 +332,26 @@ class VaultRepository(private val context: Context) {
     }
 
     // Export every file under folderPath into destDir, recreating the folder
-    // itself and its subtree. Returns exported count and total file count.
+    // itself and its subtree including empty folders. Returns exported count
+    // and total file count.
     fun exportFolderToTree(folderPath: String, destDir: DocumentFile): Pair<Int, Int> {
         val parentPrefix = folderPath.substringBeforeLast('/', "")
-        val files = loadMetadata().filter {
-            it.mimeType != "inode/directory" &&
-                (it.relativePath == folderPath || it.relativePath.startsWith("$folderPath/"))
+        val inScope = loadMetadata().filter {
+            it.relativePath == folderPath || it.relativePath.startsWith("$folderPath/")
         }
+        fun relativeTo(meta: VaultFileMetadata): String =
+            if (parentPrefix.isEmpty()) meta.relativePath
+            else meta.relativePath.removePrefix("$parentPrefix/")
+        // Folder markers first so empty folders are recreated too.
+        for (meta in inScope) {
+            if (meta.mimeType == "inode/directory") {
+                ensureDocumentPath(destDir, relativeTo(meta))
+            }
+        }
+        val files = inScope.filter { it.mimeType != "inode/directory" }
         var exportedCount = 0
         for (meta in files) {
-            val relative = if (parentPrefix.isEmpty()) meta.relativePath
-            else meta.relativePath.removePrefix("$parentPrefix/")
-            val subDir = ensureDocumentPath(destDir, relative) ?: continue
+            val subDir = ensureDocumentPath(destDir, relativeTo(meta)) ?: continue
             if (exportFileToTree(meta, subDir)) {
                 exportedCount++
             }
@@ -353,9 +361,16 @@ class VaultRepository(private val context: Context) {
 
     fun exportAllToTree(treeUri: Uri): Int {
         val rootDir = DocumentFile.fromTreeUri(context, treeUri) ?: return 0
-        val all = loadMetadata().filter { it.mimeType != "inode/directory" }
+        val all = loadMetadata()
+        // Folder markers first so empty folders are recreated too.
+        for (meta in all) {
+            if (meta.mimeType == "inode/directory") {
+                ensureDocumentPath(rootDir, meta.relativePath)
+            }
+        }
         var exportedCount = 0
         for (meta in all) {
+            if (meta.mimeType == "inode/directory") continue
             val subDir = ensureDocumentPath(rootDir, meta.relativePath) ?: continue
             if (exportFileToTree(meta, subDir)) {
                 exportedCount++

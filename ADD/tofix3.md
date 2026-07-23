@@ -25,7 +25,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 
 ## Low — robustness / cleanup
 
-6. **Empty folders are skipped on export.**
+6. **FIXED — Empty folders are skipped on export.**
    `exportFolderToTree` and `exportAllToTree` filter out `inode/directory` marker entries and only create directories on the path of exported files, so folders that contain no files (or whose subtree is empty) are silently absent from the exported tree. Fix: for marker entries under the exported scope, call `ensureDocumentPath` for their `relativePath` even though there is no file to write, so the exported structure matches the vault.
 
 7. **`CryptoManager.getOrCreateKey()` is not synchronized — concurrent first use could generate the key twice.**
