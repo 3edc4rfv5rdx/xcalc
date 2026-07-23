@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Load the Move dialog folder list off the main thread so it cannot freeze behind a running import
 - E Fsync imported encrypted blobs before saving the index so power loss cannot leave unreadable entries
 - E Keep the vault open behind system file pickers during import and export instead of relocking to the calculator
 - I Resolve tofix3 audit leftovers: keep security-crypto as accepted, jsr305 confirmed needed for R8

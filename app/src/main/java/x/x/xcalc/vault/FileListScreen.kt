@@ -666,14 +666,22 @@ fun FileListScreen(
     // Move dialog
     if (showMoveDialog) {
         val rootLabel = stringResource(R.string.root_folder)
-        val allFolders = remember { listOf(rootLabel) + repository.getAllFolderPaths() }
+        // Never query the repository during composition: a running import
+        // holds its lock for the whole encryption, which would freeze the
+        // main thread here.
+        var allFolders by remember { mutableStateOf<List<String>?>(null) }
+        LaunchedEffect(Unit) {
+            allFolders = withContext(Dispatchers.IO) {
+                listOf(rootLabel) + repository.getAllFolderPaths()
+            }
+        }
         var selectedFolder by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showMoveDialog = false },
             title = { Text(stringResource(R.string.move_to)) },
             text = {
                 LazyColumn {
-                    items(allFolders) { folder ->
+                    items(allFolders.orEmpty()) { folder ->
                         val path = if (folder == rootLabel) "" else folder
                         val isCurrentTarget = path == selectedFolder
                         Text(
