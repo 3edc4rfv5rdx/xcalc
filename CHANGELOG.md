@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- E Share one VaultRepository instance and sweep temp files once per process to fix metadata and temp races
 - N Add back arrow button to the PIN screen
 - E Close vault back to the calculator when the app goes to background
 - E Hide vault screens from screenshots and recents preview with FLAG_SECURE

@@ -12,17 +12,30 @@ import java.io.FilterInputStream
 import java.io.IOException
 import java.io.InputStream
 
+// Production code must use getInstance(): all synchronization (metadata
+// cache, @Synchronized methods, metadata.enc.tmp) is per-instance, so two
+// instances over the same files can race and corrupt the vault index.
+// The visible constructor exists for tests only.
 class VaultRepository(private val context: Context) {
+
+    companion object {
+        private const val TAG = "VaultRepository"
+
+        @Volatile
+        private var instance: VaultRepository? = null
+
+        fun getInstance(context: Context): VaultRepository {
+            return instance ?: synchronized(this) {
+                instance ?: VaultRepository(context.applicationContext).also { instance = it }
+            }
+        }
+    }
 
     private val gson = Gson()
     private val vaultDir = File(context.filesDir, "vault").apply { mkdirs() }
     private val filesDir = File(vaultDir, "files").apply { mkdirs() }
     private val metadataFile = File(vaultDir, "metadata.enc")
     private val tempDir = File(context.cacheDir, "vault_temp").apply { mkdirs() }
-
-    private companion object {
-        private const val TAG = "VaultRepository"
-    }
 
     private var metadataCache: MutableList<VaultFileMetadata>? = null
 
@@ -403,7 +416,16 @@ class VaultRepository(private val context: Context) {
         saveMetadata()
     }
 
-    fun clearTemp() {
+    private var tempSweepDone = false
+
+    // Sweep temp files left over from a previous process (killed while an
+    // external viewer was open). Runs once per process: sweeping on every
+    // vault entry would race the async persist of freshly edited temp files
+    // and could silently discard the user's edits.
+    @Synchronized
+    fun sweepTempOnce() {
+        if (tempSweepDone) return
+        tempSweepDone = true
         tempDir.listFiles()?.forEach { it.delete() }
     }
 

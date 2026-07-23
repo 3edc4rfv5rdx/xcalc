@@ -16,7 +16,7 @@ enum class VaultState { PIN_SETUP, PIN_UNLOCK, FILE_LIST }
 fun VaultScreen(onBack: () -> Unit, onExternalView: () -> Unit) {
     val context = LocalContext.current
     val pinManager = remember { PinManager(context) }
-    val repository = remember { VaultRepository(context) }
+    val repository = remember { VaultRepository.getInstance(context) }
 
     var state by remember {
         mutableStateOf(
@@ -24,11 +24,12 @@ fun VaultScreen(onBack: () -> Unit, onExternalView: () -> Unit) {
         )
     }
 
-    // Sweep decrypted temp files left over from a previous session
-    // (e.g. the process was killed while an external viewer was open).
+    // Sweep decrypted temp files left over from a previous process
+    // (e.g. it was killed while an external viewer was open). Once per
+    // process — see sweepTempOnce.
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            repository.clearTemp()
+            repository.sweepTempOnce()
         }
     }
 
