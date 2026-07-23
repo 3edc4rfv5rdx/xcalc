@@ -73,7 +73,7 @@ Each item is a self-contained prompt for an LLM. Verify against current code bef
 21. **FIXED — `deleteFile` in a loop saves metadata N times.**
     In `FileListScreen`'s delete dialog, each selected file triggers a separate `repository.deleteFile()` → full encrypt+write of metadata per file. Add a batch `deleteFiles(list)` that saves once.
 
-22. **Deprecated APIs.**
+22. **FIXED (intent part; EncryptedSharedPreferences migration deferred) — Deprecated APIs.**
     `queryIntentActivities(intent, 0)` (FileListScreen view action) is deprecated; the manual grant loop can be replaced by attaching a `ClipData` to the intent with `FLAG_GRANT_READ_URI_PERMISSION`. `EncryptedSharedPreferences`/`MasterKey` (PinManager) are deprecated in androidx.security-crypto 1.1 — note for future migration, low priority for a single-user app.
 
 23. **Design note: vault encryption key is not bound to the PIN.**

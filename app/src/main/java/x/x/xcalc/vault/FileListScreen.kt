@@ -1,5 +1,6 @@
 package x.x.xcalc.vault
 
+import android.content.ClipData
 import android.content.Intent
 import android.util.Log
 import android.webkit.MimeTypeMap
@@ -338,15 +339,9 @@ fun FileListScreen(
                                         val viewIntent = Intent(Intent.ACTION_VIEW).apply {
                                             setDataAndType(uri, mime)
                                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        val targets = context.packageManager
-                                            .queryIntentActivities(viewIntent, 0)
-                                        for (ri in targets) {
-                                            context.grantUriPermission(
-                                                ri.activityInfo.packageName,
-                                                uri,
-                                                Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                            )
+                                            // ClipData propagates the URI grant to
+                                            // whichever activity handles the intent.
+                                            clipData = ClipData.newRawUri(null, uri)
                                         }
                                         try {
                                             context.startActivity(viewIntent)
