@@ -23,6 +23,13 @@ xcalc is an Android app built with Kotlin and Jetpack Compose. It combines a cle
   </tr>
 </table>
 
+## Entering the Vault
+1. Tap the backspace key twice, then press and hold `=` for 5 seconds. A normal `=` tap still works as usual, so the gesture stays invisible during regular use.
+2. The display value turns orange — that is the only hint that PIN mode is active. Type the PIN on the calculator keypad (digits are masked as zeros) and press `=` to submit.
+3. On first launch there is no PIN yet: the display shows `Pin1`, then `Pin2` for confirmation, with real digits visible. `Ok` means the PIN was saved and the vault opens; `Error` means the two entries differ.
+4. A wrong PIN shows `Error`; after 3 failures the display counts down a 30-second cooldown as a plain number.
+5. Backspace on an empty display leaves PIN mode. Any other key silently returns to the plain calculator and is applied as a normal keypress.
+
 ## Helper Scripts
 - `10-MakeRelease.sh`: build release APKs (bumps the build number).
 - `11-EmulRELEASE.sh`, `12-SamsRELEASE.sh`: install release APKs with `adb`.
