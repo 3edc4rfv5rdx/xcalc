@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+## v0.4.20260805+101
 - I Add app screenshots to README from docs/images
 - F Show Ok or Error for 2s after first-time PIN setup: Ok opens the vault, Error returns to the calculator
 - F Label the two first-time PIN setup entries as Pin1 and Pin2 on the display
