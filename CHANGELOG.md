@@ -3,6 +3,8 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- I Ignore the local ADD/drawable.save icon backup
+- F Redraw the launcher icon as a white calculator on a #013895 background with blue keys
 - I Document the vault entry gesture and PIN mode in README
 
 ## v0.4.20260805+101
