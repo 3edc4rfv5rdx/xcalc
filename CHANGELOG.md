@@ -4,7 +4,7 @@
 
 ## Unreleased
 - I Ignore the local ADD/drawable.save icon backup and the icon-preview.png link
-- F Redraw the launcher icon flat in #013895 and white: a white-rimmed calculator with a white display showing 000 and white keys 7 8 9 + / 4 5 6 - / 1 2 3 =
+- F Redraw the launcher icon flat in #013895 and white: a white-rimmed calculator with a display showing 000 and the operators + - x / split by a cross
 - I Document the vault entry gesture and PIN mode in README
 
 ## v0.4.20260805+101
