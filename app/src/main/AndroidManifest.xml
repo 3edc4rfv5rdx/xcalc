@@ -8,7 +8,12 @@
         </intent>
     </queries>
 
+    <!-- The in-app updater: it fetches a manifest from the home server and hands
+         the downloaded APK to the system installer. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application
+        android:networkSecurityConfig="@xml/updater_network_security_config"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -37,6 +42,18 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Hands the downloaded APK to the installer. Its own class rather than
+             androidx FileProvider, so an app that already declares one keeps it. -->
+        <provider
+            android:name="dev.updater.UpdaterFileProvider"
+            android:authorities="${applicationId}.updater.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/updater_file_paths" />
         </provider>
     </application>
 

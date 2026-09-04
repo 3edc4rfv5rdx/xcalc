@@ -21,3 +21,6 @@ NextRun.todo
 *.apkx
 /ADD/drawable.save/
 /icon-preview.png
+
+# 19-LinkOut.sh puts the build here under its own name.
+/OUT

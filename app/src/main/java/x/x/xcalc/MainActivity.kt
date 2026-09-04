@@ -57,6 +57,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import dev.updater.Updater
+import dev.updater.UpdaterConfig
 import x.x.xcalc.BuildConfig
 import x.x.xcalc.ui.theme.DigitButton
 import x.x.xcalc.ui.theme.DigitButtonContent
@@ -74,6 +76,12 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Looks for a newer build on the home server and asks before it downloads
+        // anything. Silent when there is nothing newer or the server is not there.
+        Updater.checkOnStart(
+            this,
+            UpdaterConfig(appKey = "xcalc"),
+        )
         enableEdgeToEdge()
         setContent {
             XcalcTheme {
