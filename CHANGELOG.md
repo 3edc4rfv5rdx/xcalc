@@ -3,6 +3,8 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure
 
 ## Unreleased
+- I: The version line moves by itself when a new feature is waiting in the changelog, as it does in the sibling projects
+- I: An install step with nothing to install on exits 3, the code the whole set uses for "nothing to work on"
 - E: An emulator install that failed makes the run fail, instead of being hidden by the pause after it
 - E: The release push names the branch, and the tag and its changelog section are matched whole, so a build whose number is a prefix of another is no longer mistaken for it
 - E: Every step that touches the project's files or its git runs from the project directory, so one started from elsewhere can no longer work on the wrong tree
