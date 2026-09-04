@@ -40,8 +40,9 @@ echo "Version: $version"
 echo "Build:   $build"
 echo "Tag:     $TAG"
 
-# Check if tag already exists
-if git tag --list "$TAG" | grep -q "$TAG"; then
+# Anchored: the listing is already filtered to this tag, but an unanchored
+# match would also accept a longer name if it ever got there.
+if git tag --list "$TAG" | grep -q "^${TAG}$"; then
     echo "Tag $TAG already exists. Nothing to do."
     exit 0
 fi
@@ -51,7 +52,7 @@ if [[ ! -f "$CHANGELOG_FILE" ]]; then
     exit 1
 fi
 
-if grep -qF "$SECTION" "$CHANGELOG_FILE"; then
+if grep -q "^${SECTION}$" "$CHANGELOG_FILE"; then
     echo "Changelog already has section for $TAG. Skipping update."
 else
     echo "=== Inserting $TAG section right after Unreleased ==="
@@ -75,7 +76,7 @@ else
         { print }
     ' "$CHANGELOG_FILE" > "$updated_changelog"
 
-    if ! grep -qF "$SECTION" "$updated_changelog"; then
+    if ! grep -q "^${SECTION}$" "$updated_changelog"; then
         echo "ERROR: Failed to insert $SECTION into changelog."
         rm -f "$updated_changelog"
         exit 1

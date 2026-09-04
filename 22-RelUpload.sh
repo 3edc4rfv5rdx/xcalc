@@ -74,7 +74,7 @@ echo "=== Building changelog from CHANGELOG.md ==="
 
 CUR_SECTION="## ${TAG}"
 
-if ! grep -qF "$CUR_SECTION" CHANGELOG.md; then
+if ! grep -q "^${CUR_SECTION}$" CHANGELOG.md; then
     echo "ERROR: Changelog does not contain section for $TAG."
     exit 1
 fi
