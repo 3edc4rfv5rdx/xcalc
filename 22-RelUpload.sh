@@ -43,11 +43,16 @@ else
 fi
 
 # ------------------------------------------------------------
-# Parse tag: v0.3.20260401+74  ->  VERSION=0.3.20260401  BUILD=74
+# Parse tag: v0.3.20260401-74  ->  VERSION=0.3.20260401  BUILD=74
 # ------------------------------------------------------------
 CLEAN_TAG="${TAG#v}"
-VERSION="${CLEAN_TAG%%+*}"
-BUILD="${CLEAN_TAG##*+}"
+if [[ "$CLEAN_TAG" =~ ^([0-9]+\.[0-9]+\.[0-9]{8})-([0-9]+)$ ]]; then
+    VERSION="${BASH_REMATCH[1]}"
+    BUILD="${BASH_REMATCH[2]}"
+else
+    VERSION=""
+    BUILD=""
+fi
 
 if [[ -z "$VERSION" || -z "$BUILD" ]]; then
     echo "ERROR: Failed to parse tag: $TAG"
@@ -57,7 +62,7 @@ fi
 echo "Version: $VERSION"
 echo "Build:   $BUILD"
 
-APK_PREFIX="${PROJECT}-${VERSION}+${BUILD}-release"
+APK_PREFIX="${PROJECT}-${VERSION}-${BUILD}"
 
 # ------------------------------------------------------------
 # Build changelog from CHANGELOG.md
@@ -128,8 +133,8 @@ done
 # ------------------------------------------------------------
 # Target file names in GitHub Release
 # ------------------------------------------------------------
-DST_ARM64="${PROJECT}-${VERSION}+${BUILD}-arm64-v8a.apk"
-DST_UNIVERSAL="${PROJECT}-${VERSION}+${BUILD}-universal.apk"
+DST_ARM64="${PROJECT}-${VERSION}-${BUILD}-arm64-v8a.apk"
+DST_UNIVERSAL="${PROJECT}-${VERSION}-${BUILD}-universal.apk"
 
 FILES=(
     "$APK_ARM64#$DST_ARM64"

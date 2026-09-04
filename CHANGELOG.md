@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure, T=tag
 
 ## Unreleased
+- I Every artifact carries one name — xcalc-<version>-<build>-<abi>.apk, with -debug on the end of a debug build — and the tag it goes out under is v<version>-<build>.
 - I Ignore the local ADD/drawable.save icon backup and the icon-preview.png link
 - F Redraw the launcher icon flat in #013895 and white: a white-rimmed calculator with a display showing 000 and the operators + - x / split by a cross
 - I Document the vault entry gesture and PIN mode in README
