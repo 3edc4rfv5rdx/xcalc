@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -365,113 +368,148 @@ fun CalculatorScreen() {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Bottom
-    ) {
-        // In PIN mode the display shows the cooldown countdown, "Error", the
-        // real digits during first-time setup (a one-off private flow;
-        // "Pin1"/"Pin2" label the two setup entries), or one zero per typed
-        // digit on unlock. The orange value color is the only hint that the
-        // calculator is in PIN mode.
-        val pinDisplayValue = when {
-            pinCooldownRemaining > 0 -> pinCooldownRemaining.toString()
-            pinError -> "Error"
-            pinOk -> "Ok"
-            pinStage == PinStage.SETUP -> pinBuffer.ifEmpty { "Pin1" }
-            pinStage == PinStage.CONFIRM -> pinBuffer.ifEmpty { "Pin2" }
-            else -> "0".repeat(pinBuffer.length).ifEmpty { "0" }
-        }
-        DisplayArea(
-            value = if (pinMode) pinDisplayValue else currentInput,
-            history = history,
-            valueColor = if (pinMode) PinModeDisplay
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-            // The shared About dialog: it reads the name and the version off the
-            // package and the GitHub address out of the updater config, so only
-            // the build date is handed over.
-            onLongPress = {
-                activity?.let {
-                    About.show(
-                        it,
-                        AboutConfig(
-                            updater = UPDATER_CONFIG,
-                            buildDate = BuildConfig.BUILD_DATE,
-                        ),
-                    )
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Bottom
         ) {
-            rows.forEach { row ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    row.forEach { button ->
-                        val onPress: () -> Unit = {
-                            if (pinMode) {
-                                pressPinKey(button)
-                            } else {
-                                if (button.icon != null) {
-                                    backspaceTapCount = (backspaceTapCount + 1).coerceAtMost(2)
-                                    if (backspaceTapCount == 2) {
-                                        // Warm the slow PinManager init during
-                                        // the upcoming "=" hold so PIN entry
-                                        // starts right when the long-press fires.
-                                        scope.launch(Dispatchers.IO) {
-                                            PinManager.getInstance(context)
-                                        }
-                                    }
-                                } else if (button.label != "backspace") {
-                                    backspaceTapCount = 0
-                                }
-                                engine.pressButton(button.label)
-                                syncState()
-                            }
-                        }
-                        CalcButtonView(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(64.dp),
-                            button = button,
-                            onClick = onPress,
-                            onLongPress = if (button.label == "=") {
-                                {
-                                    if (!pinMode && backspaceTapCount >= 2) {
-                                        backspaceTapCount = 0
-                                        pinMode = true
-                                        scope.launch {
-                                            val pm = withContext(Dispatchers.IO) {
-                                                PinManager.getInstance(context)
-                                            }
-                                            pinStage =
-                                                if (pm.hasPin) PinStage.UNLOCK else PinStage.SETUP
-                                            pinCooldownUntil = pm.cooldownUntil
-                                        }
-                                    }
-                                }
-                            } else null
+            // In PIN mode the display shows the cooldown countdown, "Error", the
+            // real digits during first-time setup (a one-off private flow;
+            // "Pin1"/"Pin2" label the two setup entries), or one zero per typed
+            // digit on unlock. The orange value color is the only hint that the
+            // calculator is in PIN mode.
+            val pinDisplayValue = when {
+                pinCooldownRemaining > 0 -> pinCooldownRemaining.toString()
+                pinError -> "Error"
+                pinOk -> "Ok"
+                pinStage == PinStage.SETUP -> pinBuffer.ifEmpty { "Pin1" }
+                pinStage == PinStage.CONFIRM -> pinBuffer.ifEmpty { "Pin2" }
+                else -> "0".repeat(pinBuffer.length).ifEmpty { "0" }
+            }
+            DisplayArea(
+                value = if (pinMode) pinDisplayValue else currentInput,
+                history = history,
+                valueColor = if (pinMode) PinModeDisplay
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                // The shared About dialog: it reads the name and the version off the
+                // package and the GitHub address out of the updater config, so only
+                // the build date is handed over.
+                onLongPress = {
+                    activity?.let {
+                        About.show(
+                            it,
+                            AboutConfig(
+                                updater = UPDATER_CONFIG,
+                                buildDate = BuildConfig.BUILD_DATE,
+                            ),
                         )
                     }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            )
 
-                    if (row.size == 3) {
-                        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rows.forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        row.forEach { button ->
+                            val onPress: () -> Unit = {
+                                if (pinMode) {
+                                    pressPinKey(button)
+                                } else {
+                                    if (button.icon != null) {
+                                        backspaceTapCount = (backspaceTapCount + 1).coerceAtMost(2)
+                                        if (backspaceTapCount == 2) {
+                                            // Warm the slow PinManager init during
+                                            // the upcoming "=" hold so PIN entry
+                                            // starts right when the long-press fires.
+                                            scope.launch(Dispatchers.IO) {
+                                                PinManager.getInstance(context)
+                                            }
+                                        }
+                                    } else if (button.label != "backspace") {
+                                        backspaceTapCount = 0
+                                    }
+                                    engine.pressButton(button.label)
+                                    syncState()
+                                }
+                            }
+                            CalcButtonView(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(64.dp),
+                                button = button,
+                                onClick = onPress,
+                                onLongPress = if (button.label == "=") {
+                                    {
+                                        if (!pinMode && backspaceTapCount >= 2) {
+                                            backspaceTapCount = 0
+                                            pinMode = true
+                                            scope.launch {
+                                                val pm = withContext(Dispatchers.IO) {
+                                                    PinManager.getInstance(context)
+                                                }
+                                                pinStage =
+                                                    if (pm.hasPin) PinStage.UNLOCK else PinStage.SETUP
+                                                pinCooldownUntil = pm.cooldownUntil
+                                            }
+                                        }
+                                    }
+                                } else null
+                            )
+                        }
+
+                        if (row.size == 3) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
+            }
+        }
+        // Last in the Box, so it is drawn over the display rather than under it:
+        // the display paints its own background across the whole upper half. The
+        // top-left corner is the one part of it that never carries a digit.
+        if (!pinMode) {
+            IconButton(
+                onClick = {
+                    // The shared About dialog: it reads the name and the version off
+                    // the package and the GitHub address out of the updater config,
+                    // so only the build date is handed over.
+                    activity?.let {
+                        About.show(
+                            it,
+                            AboutConfig(
+                                updater = UPDATER_CONFIG,
+                                buildDate = BuildConfig.BUILD_DATE,
+                            ),
+                        )
+                    }
+                },
+                // The app draws edge to edge, so without the inset the button
+                // sits under the status bar's clock.
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(4.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = stringResource(R.string.about_title),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
             }
         }
     }

@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">xcalc</string>
     <string name="ok">OK</string>
+    <string name="about_title">About</string>
     <string name="cancel">Cancel</string>
     <string name="back">Back</string>
     <string name="backspace">Backspace</string>
