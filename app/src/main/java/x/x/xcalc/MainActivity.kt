@@ -58,6 +58,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import dev.about.About
+import dev.about.AboutConfig
 import dev.updater.Updater
 import dev.updater.UpdaterConfig
 import x.x.xcalc.BuildConfig
@@ -123,7 +125,6 @@ fun CalculatorScreen() {
     val scope = rememberCoroutineScope()
     val engine = remember { CalculatorEngine() }
     val showVault = remember { mutableStateOf(false) }
-    var showAbout by remember { mutableStateOf(false) }
     // The updater draws its own dialogs, so it needs the activity, not a context.
     val activity = LocalActivity.current
     var backspaceTapCount by remember { mutableIntStateOf(0) }
@@ -298,48 +299,6 @@ fun CalculatorScreen() {
         )
     )
 
-    if (showAbout) {
-        AlertDialog(
-            onDismissRequest = { showAbout = false },
-            title = { Text(stringResource(R.string.app_name)) },
-            text = {
-                Text(
-                    // The version ends in the build number, so the second half of
-                    // this line is the day the build was made.
-                    "${stringResource(R.string.version)} ${BuildConfig.VERSION_NAME} (${BuildConfig.BUILD_DATE})",
-                    fontSize = 22.sp
-                )
-            },
-            // Both buttons in the confirm slot: Update belongs at the far left,
-            // away from OK, and Material would otherwise cluster the two on the
-            // right.
-            confirmButton = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    // The start-up check keeps six hours between two looks at
-                    // the server, which is right for a phone and useless for a
-                    // build published a minute ago. This one ignores the
-                    // interval and answers either way; the dialog closes first,
-                    // or the updater's own would sit on top of it.
-                    if (activity != null) {
-                        Button(onClick = {
-                            showAbout = false
-                            Updater.checkNow(activity, UPDATER_CONFIG)
-                        }) {
-                            Text(stringResource(R.string.about_update))
-                        }
-                    } else {
-                        Spacer(Modifier)
-                    }
-                    Button(onClick = { showAbout = false }) {
-                        Text(stringResource(R.string.ok))
-                    }
-                }
-            }
-        )
-    }
 
     if (showVault.value || pinMode) {
         // Block screenshots and the recents preview while the vault or PIN
@@ -430,7 +389,20 @@ fun CalculatorScreen() {
             history = history,
             valueColor = if (pinMode) PinModeDisplay
             else MaterialTheme.colorScheme.onSurfaceVariant,
-            onLongPress = { showAbout = true },
+            // The shared About dialog: it reads the name and the version off the
+            // package and the GitHub address out of the updater config, so only
+            // the build date is handed over.
+            onLongPress = {
+                activity?.let {
+                    About.show(
+                        it,
+                        AboutConfig(
+                            updater = UPDATER_CONFIG,
+                            buildDate = BuildConfig.BUILD_DATE,
+                        ),
+                    )
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
