@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure
 
 ## Unreleased
+- N: The armeabi-v7a APK goes into OUT/ and out with the release, so a 32-bit phone or TV box gets its own build instead of the universal one
 - N: The About screen shows the build date on a line of its own, where the build number used to be — the version already ends in that number
 - I: The version is major.minor.build — the date left it — so the tag is v0.5.113 and an artifact xcalc-0.5.113-arm64-v8a.apk, each number written once; 20-MakeTag.sh puts the build date after the tag in the CHANGELOG heading, for the reader
 - N: The app checks its own GitHub release for a newer build on start and offers it, the same updater the other projects here use — one manifest names every ABI split, so the phone takes arm64 and an armeabi-v7a box takes v7a, wherever either of them is
