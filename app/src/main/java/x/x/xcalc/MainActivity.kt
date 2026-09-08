@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -73,16 +74,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+// One description of this app's release, for the silent check at start-up and
+// the About dialog's button alike.
+val UPDATER_CONFIG = UpdaterConfig(appKey = "xcalc")
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Looks for a newer build in this app's own GitHub release and asks
         // before it downloads anything. Silent when there is nothing newer or
         // GitHub cannot be reached.
-        Updater.checkOnStart(
-            this,
-            UpdaterConfig(appKey = "xcalc"),
-        )
+        Updater.checkOnStart(this, UPDATER_CONFIG)
         enableEdgeToEdge()
         setContent {
             XcalcTheme {
@@ -122,6 +124,8 @@ fun CalculatorScreen() {
     val engine = remember { CalculatorEngine() }
     val showVault = remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
+    // The updater draws its own dialogs, so it needs the activity, not a context.
+    val activity = LocalActivity.current
     var backspaceTapCount by remember { mutableIntStateOf(0) }
 
     var currentInput by remember { mutableStateOf(engine.currentInput) }
@@ -306,9 +310,32 @@ fun CalculatorScreen() {
                     fontSize = 22.sp
                 )
             },
+            // Both buttons in the confirm slot: Update belongs at the far left,
+            // away from OK, and Material would otherwise cluster the two on the
+            // right.
             confirmButton = {
-                Button(onClick = { showAbout = false }) {
-                    Text(stringResource(R.string.ok))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    // The start-up check keeps six hours between two looks at
+                    // the server, which is right for a phone and useless for a
+                    // build published a minute ago. This one ignores the
+                    // interval and answers either way; the dialog closes first,
+                    // or the updater's own would sit on top of it.
+                    if (activity != null) {
+                        Button(onClick = {
+                            showAbout = false
+                            Updater.checkNow(activity, UPDATER_CONFIG)
+                        }) {
+                            Text(stringResource(R.string.about_update))
+                        }
+                    } else {
+                        Spacer(Modifier)
+                    }
+                    Button(onClick = { showAbout = false }) {
+                        Text(stringResource(R.string.ok))
+                    }
                 }
             }
         )

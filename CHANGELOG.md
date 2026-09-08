@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure
 
 ## Unreleased
+- N: The About dialog has an Update button, so a new build can be looked for at once instead of waiting out the updater's six-hour interval; it answers even when there is nothing newer
 ## v0.5.113 (2026-09-08)
 - N: The armeabi-v7a APK goes into OUT/ and out with the release, so a 32-bit phone or TV box gets its own build instead of the universal one
 - N: The About screen shows the build date on a line of its own, where the build number used to be — the version already ends in that number
