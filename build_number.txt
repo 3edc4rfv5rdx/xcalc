@@ -1,3 +1,4 @@
 base_version=0.5
 build=112
 version=0.5.20260904
+build_date=2026-09-04

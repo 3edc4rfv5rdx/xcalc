@@ -32,8 +32,10 @@ if [[ -z "$version" || -z "$build" ]]; then
     exit 1
 fi
 
-TAG="v${version}-${build}"
-SECTION="## ${TAG}"
+# The version ends in the build number, so a tag has nothing to add to it. The
+# build date goes into the changelog heading below, for the reader alone.
+TAG="v${version}"
+SECTION="## ${TAG}${build_date:+ ($build_date)}"
 CHANGELOG_FILE="CHANGELOG.md"
 
 echo "Version: $version"
@@ -52,7 +54,7 @@ if [[ ! -f "$CHANGELOG_FILE" ]]; then
     exit 1
 fi
 
-if grep -q "^${SECTION}$" "$CHANGELOG_FILE"; then
+if grep -qE "^## ${TAG}( |$)" "$CHANGELOG_FILE"; then
     echo "Changelog already has section for $TAG. Skipping update."
 else
     echo "=== Inserting $TAG section right after Unreleased ==="
@@ -76,7 +78,7 @@ else
         { print }
     ' "$CHANGELOG_FILE" > "$updated_changelog"
 
-    if ! grep -q "^${SECTION}$" "$updated_changelog"; then
+    if ! grep -qE "^## ${TAG}( |$)" "$updated_changelog"; then
         echo "ERROR: Failed to insert $SECTION into changelog."
         rm -f "$updated_changelog"
         exit 1

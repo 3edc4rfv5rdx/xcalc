@@ -300,7 +300,9 @@ fun CalculatorScreen() {
             title = { Text(stringResource(R.string.app_name)) },
             text = {
                 Text(
-                    "${stringResource(R.string.version)} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    // The version ends in the build number, so the second half of
+                    // this line is the day the build was made.
+                    "${stringResource(R.string.version)} ${BuildConfig.VERSION_NAME} (${BuildConfig.BUILD_DATE})",
                     fontSize = 22.sp
                 )
             },
