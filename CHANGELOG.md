@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure
 
 ## Unreleased
+- F: The About dialog's update button no longer promises an update that is not there: it opens as a check, asks the server as the card comes up, and turns into an inverted Update only when a newer build is published
 - N: An (i) button in the display's top left corner opens About — the long press on the display still does too, but nothing said it was there
 - R: The About screen is the shared module's now — one dialog for every project here, with the version, build date, GitHub page, mailbox and the update check on it
 - N: The About dialog has an Update button, so a new build can be looked for at once instead of waiting out the updater's six-hour interval; it answers even when there is nothing newer
