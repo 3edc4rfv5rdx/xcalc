@@ -3,6 +3,8 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure
 
 ## Unreleased
+- E: A build published just after the app last looked is offered on the next launch instead of up to six hours later
+- E: The start-up update check is no longer silenced for six hours by the About screen's own check button
 - I: The README says what the app is now: the (i) button and the update check, what the PIN does and does not protect, the two shared modules compiled in from beside it, and every build step the repository has
 - F: The About dialog's update button no longer promises an update that is not there: it opens as a check, asks the server as the card comes up, and turns into an inverted Update only when a newer build is published
 - N: An (i) button in the display's top left corner opens About — the long press on the display still does too, but nothing said it was there
