@@ -3,6 +3,7 @@
 > N=new feature, E=error fix, F=fine-tune, R=refactor, I=infrastructure
 
 ## Unreleased
+## v0.6.119 (2026-09-16)
 - E: A build published just after the app last looked is offered on the next launch instead of up to six hours later
 - E: The start-up update check is no longer silenced for six hours by the About screen's own check button
 - I: The README says what the app is now: the (i) button and the update check, what the PIN does and does not protect, the two shared modules compiled in from beside it, and every build step the repository has
